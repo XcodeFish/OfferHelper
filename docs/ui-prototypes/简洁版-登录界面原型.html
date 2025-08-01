@@ -1,0 +1,659 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>OfferHelper - 登录界面</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #1a1a1a;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      padding: 20px;
+    }
+
+    .login-container {
+      width: 360px;
+      background: rgba(0, 0, 0, 0.95);
+      border-radius: 12px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(20px);
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
+      overflow: hidden;
+    }
+
+    /* 标题栏 */
+    .title-bar {
+      height: 40px;
+      background: rgba(255, 255, 255, 0.05);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 16px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    .title-content {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .login-title {
+      color: #f3f4f6;
+      font-size: 14px;
+      font-weight: 500;
+    }
+
+    .close-btn {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      border: none;
+      background: #ff5f57;
+      color: white;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      transition: all 0.2s ease;
+    }
+
+    .close-btn:hover {
+      transform: scale(1.1);
+    }
+
+    /* 登录内容 */
+    .login-content {
+      padding: 32px 24px;
+      text-align: center;
+    }
+
+    /* Logo和标题 */
+    .login-header {
+      margin-bottom: 32px;
+    }
+
+    .app-logo {
+      width: 64px;
+      height: 64px;
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      border-radius: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 32px;
+      margin: 0 auto 16px;
+      box-shadow: 0 4px 16px rgba(102, 126, 234, 0.3);
+    }
+
+    .welcome-title {
+      color: #f3f4f6;
+      font-size: 20px;
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+
+    .welcome-subtitle {
+      color: #9ca3af;
+      font-size: 14px;
+      line-height: 1.4;
+    }
+
+    /* 登录表单 */
+    .login-form {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .form-group {
+      text-align: left;
+    }
+
+    .form-label {
+      color: #d1d5db;
+      font-size: 13px;
+      font-weight: 500;
+      margin-bottom: 8px;
+      display: block;
+    }
+
+    .form-input {
+      width: 100%;
+      height: 44px;
+      padding: 0 12px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 8px;
+      color: #f3f4f6;
+      font-size: 14px;
+      outline: none;
+      transition: all 0.2s ease;
+    }
+
+    .form-input:focus {
+      border-color: #667eea;
+      box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+      background: rgba(255, 255, 255, 0.08);
+    }
+
+    .form-input::placeholder {
+      color: #6b7280;
+    }
+
+    /* 验证码输入组 */
+    .code-input-group {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .code-input {
+      flex: 1;
+    }
+
+    .send-code-btn {
+      height: 44px;
+      padding: 0 16px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 8px;
+      color: #667eea;
+      font-size: 12px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      white-space: nowrap;
+    }
+
+    .send-code-btn:hover:not(:disabled) {
+      background: rgba(102, 126, 234, 0.1);
+      border-color: #667eea;
+    }
+
+    .send-code-btn:disabled {
+      color: #6b7280;
+      cursor: not-allowed;
+    }
+
+    /* 登录按钮 */
+    .login-btn {
+      width: 100%;
+      height: 48px;
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      border: none;
+      border-radius: 8px;
+      color: white;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      margin-top: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    .login-btn:hover:not(:disabled) {
+      transform: translateY(-1px);
+      box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+    }
+
+    .login-btn:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    /* 加载动画 */
+    .loading-spinner {
+      width: 16px;
+      height: 16px;
+      border: 2px solid rgba(255, 255, 255, 0.3);
+      border-top: 2px solid white;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+      0% {
+        transform: rotate(0deg);
+      }
+
+      100% {
+        transform: rotate(360deg);
+      }
+    }
+
+    /* 错误提示 */
+    .error-message {
+      background: rgba(239, 68, 68, 0.1);
+      border: 1px solid rgba(239, 68, 68, 0.2);
+      border-radius: 6px;
+      padding: 8px 12px;
+      color: #fca5a5;
+      font-size: 12px;
+      text-align: center;
+      margin-top: 12px;
+      display: none;
+    }
+
+    .error-message.show {
+      display: block;
+    }
+
+    /* 成功提示 */
+    .success-message {
+      background: rgba(16, 185, 129, 0.1);
+      border: 1px solid rgba(16, 185, 129, 0.2);
+      border-radius: 6px;
+      padding: 8px 12px;
+      color: #6ee7b7;
+      font-size: 12px;
+      text-align: center;
+      margin-top: 12px;
+      display: none;
+    }
+
+    .success-message.show {
+      display: block;
+    }
+
+    /* 底部链接 */
+    .login-footer {
+      margin-top: 24px;
+      padding-top: 20px;
+      border-top: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    .footer-text {
+      color: #6b7280;
+      font-size: 12px;
+      line-height: 1.4;
+    }
+
+    .footer-link {
+      color: #667eea;
+      text-decoration: none;
+      transition: color 0.2s ease;
+    }
+
+    .footer-link:hover {
+      color: #8b9cf7;
+    }
+
+    /* 登录状态 */
+    .login-step {
+      display: none;
+    }
+
+    .login-step.active {
+      display: block;
+    }
+
+    /* 响应式调整 */
+    @media (max-width: 400px) {
+      .login-container {
+        width: 100%;
+        margin: 0 10px;
+      }
+
+      .login-content {
+        padding: 24px 20px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="login-container">
+    <!-- 标题栏 -->
+    <div class="title-bar">
+      <div class="title-content">
+        <span class="login-title">🔐 用户登录</span>
+      </div>
+      <button class="close-btn">×</button>
+    </div>
+
+    <!-- 登录内容 -->
+    <div class="login-content">
+      <!-- Logo和标题 -->
+      <div class="login-header">
+        <div class="app-logo">🎯</div>
+        <h1 class="welcome-title">欢迎使用 OfferHelper</h1>
+        <p class="welcome-subtitle">专业的面试AI辅助工具<br>让每一次面试都充满信心</p>
+      </div>
+
+      <!-- 登录表单 -->
+      <form class="login-form" id="loginForm">
+        <!-- 第一步：输入邮箱 -->
+        <div class="login-step active" id="emailStep">
+          <div class="form-group">
+            <label class="form-label" for="email">邮箱地址</label>
+            <input type="email" id="email" class="form-input" placeholder="请输入您的邮箱地址" required>
+          </div>
+
+          <button type="button" class="login-btn" id="sendCodeBtn">
+            <span id="sendCodeText">发送验证码</span>
+          </button>
+        </div>
+
+        <!-- 第二步：输入验证码 -->
+        <div class="login-step" id="codeStep">
+          <div class="form-group">
+            <label class="form-label" for="email-display">邮箱地址</label>
+            <input type="email" id="emailDisplay" class="form-input" readonly
+              style="background: rgba(255, 255, 255, 0.02); color: #9ca3af;">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="verificationCode">验证码</label>
+            <div class="code-input-group">
+              <input type="text" id="verificationCode" class="form-input code-input" placeholder="请输入6位验证码"
+                maxlength="6" required>
+              <button type="button" class="send-code-btn" id="resendBtn">
+                <span id="resendText">重新发送</span>
+              </button>
+            </div>
+          </div>
+
+          <button type="button" class="login-btn" id="loginBtn">
+            <span id="loginText">登录</span>
+          </button>
+
+          <div style="text-align: center; margin-top: 16px;">
+            <button type="button" class="footer-link" id="backBtn"
+              style="background: none; border: none; cursor: pointer;">
+              ← 返回修改邮箱
+            </button>
+          </div>
+        </div>
+
+        <!-- 错误提示 -->
+        <div class="error-message" id="errorMessage"></div>
+
+        <!-- 成功提示 -->
+        <div class="success-message" id="successMessage"></div>
+      </form>
+
+      <!-- 底部信息 -->
+      <div class="login-footer">
+        <p class="footer-text">
+          首次使用？验证邮箱后将自动注册账号<br>
+          遇到问题？<a href="#" class="footer-link">联系客服</a>
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // 应用状态
+    let appState = {
+      currentStep: 'email', // 'email' | 'code'
+      email: '',
+      isLoading: false,
+      countdown: 0
+    }
+
+    // DOM 元素
+    const elements = {
+      emailStep: document.getElementById('emailStep'),
+      codeStep: document.getElementById('codeStep'),
+      email: document.getElementById('email'),
+      emailDisplay: document.getElementById('emailDisplay'),
+      verificationCode: document.getElementById('verificationCode'),
+      sendCodeBtn: document.getElementById('sendCodeBtn'),
+      sendCodeText: document.getElementById('sendCodeText'),
+      loginBtn: document.getElementById('loginBtn'),
+      loginText: document.getElementById('loginText'),
+      resendBtn: document.getElementById('resendBtn'),
+      resendText: document.getElementById('resendText'),
+      backBtn: document.getElementById('backBtn'),
+      errorMessage: document.getElementById('errorMessage'),
+      successMessage: document.getElementById('successMessage'),
+      closeBtn: document.querySelector('.close-btn')
+    }
+
+    // 验证邮箱格式
+    function validateEmail (email)
+    {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+      return emailRegex.test(email)
+    }
+
+    // 显示错误信息
+    function showError (message)
+    {
+      elements.errorMessage.textContent = message
+      elements.errorMessage.className = 'error-message show'
+      elements.successMessage.className = 'success-message'
+    }
+
+    // 显示成功信息
+    function showSuccess (message)
+    {
+      elements.successMessage.textContent = message
+      elements.successMessage.className = 'success-message show'
+      elements.errorMessage.className = 'error-message'
+    }
+
+    // 隐藏所有提示
+    function hideMessages ()
+    {
+      elements.errorMessage.className = 'error-message'
+      elements.successMessage.className = 'success-message'
+    }
+
+    // 切换到验证码步骤
+    function switchToCodeStep ()
+    {
+      appState.currentStep = 'code'
+      elements.emailStep.className = 'login-step'
+      elements.codeStep.className = 'login-step active'
+      elements.emailDisplay.value = appState.email
+      elements.verificationCode.focus()
+    }
+
+    // 切换到邮箱步骤
+    function switchToEmailStep ()
+    {
+      appState.currentStep = 'email'
+      elements.emailStep.className = 'login-step active'
+      elements.codeStep.className = 'login-step'
+      elements.verificationCode.value = ''
+      elements.email.focus()
+      hideMessages()
+    }
+
+    // 开始倒计时
+    function startCountdown (seconds)
+    {
+      appState.countdown = seconds
+      elements.resendBtn.disabled = true
+
+      const timer = setInterval(() =>
+      {
+        appState.countdown--
+        elements.resendText.textContent = `${appState.countdown}s后重发`
+
+        if (appState.countdown <= 0) {
+          clearInterval(timer)
+          elements.resendBtn.disabled = false
+          elements.resendText.textContent = '重新发送'
+        }
+      }, 1000)
+    }
+
+    // 设置加载状态
+    function setLoading (button, textElement, isLoading)
+    {
+      if (isLoading) {
+        button.disabled = true
+        textElement.innerHTML = '<div class="loading-spinner"></div>'
+        appState.isLoading = true
+      } else {
+        button.disabled = false
+        appState.isLoading = false
+      }
+    }
+
+    // 发送验证码
+    async function sendVerificationCode ()
+    {
+      const email = elements.email.value.trim()
+
+      if (!email) {
+        showError('请输入邮箱地址')
+        elements.email.focus()
+        return
+      }
+
+      if (!validateEmail(email)) {
+        showError('请输入有效的邮箱地址')
+        elements.email.focus()
+        return
+      }
+
+      appState.email = email
+      setLoading(elements.sendCodeBtn, elements.sendCodeText, true)
+      hideMessages()
+
+      try {
+        // 模拟API调用
+        await new Promise(resolve => setTimeout(resolve, 2000))
+
+        // 模拟成功
+        showSuccess(`验证码已发送至 ${email}`)
+        setTimeout(() =>
+        {
+          switchToCodeStep()
+          startCountdown(60)
+        }, 1000)
+
+      } catch (error) {
+        showError('发送验证码失败，请重试')
+      } finally {
+        elements.sendCodeText.textContent = '发送验证码'
+        elements.sendCodeBtn.disabled = false
+        appState.isLoading = false
+      }
+    }
+
+    // 重新发送验证码
+    async function resendVerificationCode ()
+    {
+      setLoading(elements.resendBtn, elements.resendText, true)
+      hideMessages()
+
+      try {
+        // 模拟API调用
+        await new Promise(resolve => setTimeout(resolve, 1500))
+
+        showSuccess('验证码已重新发送')
+        startCountdown(60)
+
+      } catch (error) {
+        showError('重新发送失败，请重试')
+      } finally {
+        if (appState.countdown <= 0) {
+          elements.resendText.textContent = '重新发送'
+          elements.resendBtn.disabled = false
+        }
+        appState.isLoading = false
+      }
+    }
+
+    // 验证登录
+    async function verifyLogin ()
+    {
+      const code = elements.verificationCode.value.trim()
+
+      if (!code) {
+        showError('请输入验证码')
+        elements.verificationCode.focus()
+        return
+      }
+
+      if (code.length !== 6) {
+        showError('请输入6位验证码')
+        elements.verificationCode.focus()
+        return
+      }
+
+      setLoading(elements.loginBtn, elements.loginText, true)
+      hideMessages()
+
+      try {
+        // 模拟API调用
+        await new Promise(resolve => setTimeout(resolve, 2000))
+
+        // 模拟登录成功
+        showSuccess('登录成功！正在跳转...')
+
+        setTimeout(() =>
+        {
+          alert('登录成功！\n\n用户信息：\n邮箱：' + appState.email + '\n令牌：mock-jwt-token-' + Date.now())
+        }, 1000)
+
+      } catch (error) {
+        showError('验证码错误，请重试')
+        elements.verificationCode.focus()
+      } finally {
+        elements.loginText.textContent = '登录'
+        elements.loginBtn.disabled = false
+        appState.isLoading = false
+      }
+    }
+
+    // 事件监听
+    elements.sendCodeBtn.addEventListener('click', sendVerificationCode)
+    elements.resendBtn.addEventListener('click', resendVerificationCode)
+    elements.loginBtn.addEventListener('click', verifyLogin)
+    elements.backBtn.addEventListener('click', switchToEmailStep)
+    elements.closeBtn.addEventListener('click', () =>
+    {
+      if (confirm('确定要关闭登录窗口吗？')) {
+        window.close()
+      }
+    })
+
+    // 回车键提交
+    elements.email.addEventListener('keypress', (e) =>
+    {
+      if (e.key === 'Enter' && !appState.isLoading) {
+        sendVerificationCode()
+      }
+    })
+
+    elements.verificationCode.addEventListener('keypress', (e) =>
+    {
+      if (e.key === 'Enter' && !appState.isLoading) {
+        verifyLogin()
+      }
+    })
+
+    // 验证码输入限制（只允许数字）
+    elements.verificationCode.addEventListener('input', (e) =>
+    {
+      e.target.value = e.target.value.replace(/[^0-9]/g, '')
+    })
+
+    // 自动聚焦
+    elements.email.focus();
+  </script>
+</body>
+
+</html>

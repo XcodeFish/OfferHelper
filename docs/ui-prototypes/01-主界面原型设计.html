@@ -1,0 +1,665 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>OfferHelper - 主界面原型</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #1a1a1a;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      padding: 20px;
+    }
+
+    .app-container {
+      width: 380px;
+      min-height: 450px;
+      background: rgba(0, 0, 0, 0.92);
+      border-radius: 16px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(20px);
+      box-shadow:
+        0 20px 40px rgba(0, 0, 0, 0.4),
+        0 0 0 1px rgba(255, 255, 255, 0.05);
+      overflow: hidden;
+      position: relative;
+    }
+
+    /* 标题栏 */
+    .title-bar {
+      height: 40px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 16px;
+      color: white;
+      cursor: move;
+    }
+
+    .title-content {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .app-icon {
+      font-size: 16px;
+    }
+
+    .app-title {
+      font-size: 14px;
+      font-weight: 600;
+    }
+
+    .window-controls {
+      display: flex;
+      gap: 8px;
+    }
+
+    .control-btn {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      border: none;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      transition: all 0.2s ease;
+    }
+
+    .control-btn.minimize {
+      background: #ffbd2e;
+    }
+
+    .control-btn.close {
+      background: #ff5f57;
+      color: white;
+    }
+
+    .control-btn:hover {
+      transform: scale(1.1);
+    }
+
+    /* 内容区域 */
+    .content-area {
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    /* 状态栏 */
+    .status-bar {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px;
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 8px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .status-indicator {
+      position: relative;
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: #10b981;
+    }
+
+    .status-indicator.listening {
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0% {
+        transform: scale(1);
+        opacity: 1;
+      }
+
+      50% {
+        transform: scale(1.2);
+        opacity: 0.8;
+      }
+
+      100% {
+        transform: scale(1);
+        opacity: 1;
+      }
+    }
+
+    .status-text {
+      color: #d1d5db;
+      font-size: 14px;
+      flex: 1;
+    }
+
+    .connection-status {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .connection-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #10b981;
+    }
+
+    .connection-text {
+      color: #9ca3af;
+      font-size: 12px;
+    }
+
+    /* 问题显示区域 */
+    .question-display {
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 8px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-left: 4px solid #667eea;
+      overflow: hidden;
+    }
+
+    .question-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 16px;
+      background: rgba(255, 255, 255, 0.02);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .question-header h3 {
+      color: #f3f4f6;
+      font-size: 14px;
+      font-weight: 600;
+      margin: 0;
+    }
+
+    .question-actions {
+      display: flex;
+      gap: 4px;
+    }
+
+    .action-btn {
+      width: 24px;
+      height: 24px;
+      border: none;
+      background: rgba(255, 255, 255, 0.1);
+      color: #9ca3af;
+      border-radius: 4px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s ease;
+    }
+
+    .action-btn:hover {
+      background: rgba(255, 255, 255, 0.2);
+      color: #f3f4f6;
+    }
+
+    .question-content {
+      padding: 16px;
+      min-height: 60px;
+      display: flex;
+      align-items: center;
+    }
+
+    .question-text {
+      color: #f3f4f6;
+      font-size: 14px;
+      line-height: 1.5;
+      width: 100%;
+    }
+
+    .question-text.placeholder {
+      color: #6b7280;
+      text-align: center;
+      font-style: italic;
+    }
+
+    .question-text.listening {
+      color: #3b82f6;
+    }
+
+    /* 答案面板 */
+    .answer-panel {
+      background: rgba(255, 255, 255, 0.08);
+      border-radius: 12px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      overflow: hidden;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+    }
+
+    .answer-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px;
+      background: rgba(255, 255, 255, 0.02);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .answer-title {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .answer-title h3 {
+      color: #f3f4f6;
+      font-size: 14px;
+      font-weight: 600;
+      margin: 0;
+    }
+
+    .confidence-badge {
+      background: linear-gradient(135deg, #10b981, #059669);
+      color: white;
+      padding: 4px 8px;
+      border-radius: 12px;
+      font-size: 11px;
+      font-weight: 500;
+    }
+
+    .answer-content {
+      padding: 16px;
+    }
+
+    .answer-text {
+      color: #f3f4f6;
+      font-size: 14px;
+      line-height: 1.6;
+      margin-bottom: 16px;
+      padding: 12px;
+      background: rgba(0, 0, 0, 0.2);
+      border-radius: 8px;
+      border-left: 3px solid #667eea;
+    }
+
+    .keywords-section {
+      margin-bottom: 16px;
+    }
+
+    .section-label {
+      color: #9ca3af;
+      font-size: 12px;
+      font-weight: 500;
+      display: block;
+      margin-bottom: 8px;
+    }
+
+    .keywords-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+    .keyword-tag {
+      background: rgba(102, 126, 234, 0.2);
+      color: #a5b4fc;
+      padding: 4px 8px;
+      border-radius: 12px;
+      font-size: 11px;
+      font-weight: 500;
+      border: 1px solid rgba(102, 126, 234, 0.3);
+    }
+
+    .suggestions-section {
+      border-top: 1px solid rgba(255, 255, 255, 0.1);
+      padding-top: 16px;
+    }
+
+    .suggestions-list {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+
+    .suggestions-list li {
+      color: #d1d5db;
+      font-size: 13px;
+      line-height: 1.4;
+      margin-bottom: 8px;
+      padding-left: 16px;
+      position: relative;
+    }
+
+    .suggestions-list li:before {
+      content: "•";
+      color: #667eea;
+      position: absolute;
+      left: 0;
+      font-weight: bold;
+    }
+
+    /* 控制面板 */
+    .control-panel {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .primary-controls {
+      display: flex;
+    }
+
+    .control-btn.primary {
+      flex: 1;
+      height: 48px;
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+    }
+
+    .control-btn.primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 16px rgba(102, 126, 234, 0.4);
+    }
+
+    .control-btn.primary.listening {
+      background: linear-gradient(135deg, #ef4444, #dc2626);
+    }
+
+    .secondary-controls {
+      display: flex;
+      gap: 8px;
+      justify-content: center;
+    }
+
+    .control-btn.secondary {
+      width: 40px;
+      height: 40px;
+      background: rgba(255, 255, 255, 0.05);
+      color: #9ca3af;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 8px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s ease;
+    }
+
+    .control-btn.secondary:hover {
+      background: rgba(255, 255, 255, 0.1);
+      color: #f3f4f6;
+      border-color: #667eea;
+      transform: scale(1.05);
+    }
+
+    /* 音频可视化 */
+    .audio-visualizer {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 2px;
+      margin-top: 12px;
+      height: 24px;
+    }
+
+    .wave-bar {
+      width: 3px;
+      height: 4px;
+      background: #667eea;
+      border-radius: 2px;
+      animation: wave 1.5s ease-in-out infinite;
+    }
+
+    .wave-bar:nth-child(1) {
+      animation-delay: 0ms;
+    }
+
+    .wave-bar:nth-child(2) {
+      animation-delay: 100ms;
+    }
+
+    .wave-bar:nth-child(3) {
+      animation-delay: 200ms;
+    }
+
+    .wave-bar:nth-child(4) {
+      animation-delay: 300ms;
+    }
+
+    .wave-bar:nth-child(5) {
+      animation-delay: 400ms;
+    }
+
+    @keyframes wave {
+
+      0%,
+      100% {
+        height: 4px;
+      }
+
+      50% {
+        height: 20px;
+      }
+    }
+
+    /* 响应式调整 */
+    @media (max-width: 400px) {
+      .app-container {
+        width: 100%;
+        margin: 0 10px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="app-container">
+    <!-- 标题栏 -->
+    <div class="title-bar">
+      <div class="title-content">
+        <div class="app-icon">🎯</div>
+        <span class="app-title">OfferHelper</span>
+      </div>
+      <div class="window-controls">
+        <button class="control-btn minimize">−</button>
+        <button class="control-btn close">×</button>
+      </div>
+    </div>
+
+    <!-- 内容区域 -->
+    <div class="content-area">
+      <!-- 状态栏 -->
+      <div class="status-bar">
+        <div class="status-indicator listening"></div>
+        <span class="status-text">正在监听面试官提问...</span>
+        <div class="connection-status">
+          <div class="connection-dot"></div>
+          <span class="connection-text">在线</span>
+        </div>
+      </div>
+
+      <!-- 问题显示区域 -->
+      <div class="question-display">
+        <div class="question-header">
+          <h3>📝 面试官问题</h3>
+          <div class="question-actions">
+            <button class="action-btn" title="复制问题">📋</button>
+            <button class="action-btn" title="清除问题">🗑️</button>
+          </div>
+        </div>
+        <div class="question-content">
+          <div class="question-text listening">
+            请介绍一下你在React项目中的经验，特别是状态管理方面...
+          </div>
+        </div>
+        <div class="audio-visualizer">
+          <div class="wave-bar"></div>
+          <div class="wave-bar"></div>
+          <div class="wave-bar"></div>
+          <div class="wave-bar"></div>
+          <div class="wave-bar"></div>
+        </div>
+      </div>
+
+      <!-- 答案面板 -->
+      <div class="answer-panel">
+        <div class="answer-header">
+          <div class="answer-title">
+            <h3>💡 建议回答</h3>
+            <div class="confidence-badge">置信度: 92%</div>
+          </div>
+          <div class="question-actions">
+            <button class="action-btn" title="复制回答">📋</button>
+            <button class="action-btn" title="重新生成">🔄</button>
+            <button class="action-btn" title="关闭">×</button>
+          </div>
+        </div>
+        <div class="answer-content">
+          <div class="answer-text">
+            我在React项目中有丰富的经验，主要使用Redux和Context API进行状态管理。在大型项目中，我倾向于使用Redux Toolkit来简化状态管理的复杂度，同时结合React
+            Query处理服务端状态。对于组件级状态，我会根据复杂度选择useState或useReducer...
+          </div>
+
+          <div class="keywords-section">
+            <span class="section-label">关键词:</span>
+            <div class="keywords-list">
+              <span class="keyword-tag">React</span>
+              <span class="keyword-tag">Redux</span>
+              <span class="keyword-tag">状态管理</span>
+              <span class="keyword-tag">Context API</span>
+              <span class="keyword-tag">React Query</span>
+            </div>
+          </div>
+
+          <div class="suggestions-section">
+            <span class="section-label">💡 回答建议:</span>
+            <ul class="suggestions-list">
+              <li>结合具体项目案例来说明</li>
+              <li>提到性能优化的考虑</li>
+              <li>展示对不同状态管理方案的理解</li>
+              <li>可以提及最新的状态管理趋势</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <!-- 控制面板 -->
+      <div class="control-panel">
+        <div class="primary-controls">
+          <button class="control-btn primary listening">
+            🎤 停止监听
+          </button>
+        </div>
+        <div class="secondary-controls">
+          <button class="control-btn secondary" title="隐藏助手">👁️</button>
+          <button class="control-btn secondary" title="知识库">📚</button>
+          <button class="control-btn secondary" title="设置">⚙️</button>
+          <button class="control-btn secondary" title="历史记录">📜</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // 简单的交互演示
+    document.addEventListener('DOMContentLoaded', function ()
+    {
+      const primaryBtn = document.querySelector('.control-btn.primary')
+      const statusIndicator = document.querySelector('.status-indicator')
+      const statusText = document.querySelector('.status-text')
+      const questionText = document.querySelector('.question-text')
+
+      let isListening = true
+
+      primaryBtn.addEventListener('click', function ()
+      {
+        isListening = !isListening
+
+        if (isListening) {
+          primaryBtn.textContent = '🎤 停止监听'
+          primaryBtn.classList.add('listening')
+          statusIndicator.classList.add('listening')
+          statusText.textContent = '正在监听面试官提问...'
+          questionText.classList.add('listening')
+        } else {
+          primaryBtn.textContent = '🎤 开始监听'
+          primaryBtn.classList.remove('listening')
+          statusIndicator.classList.remove('listening')
+          statusText.textContent = '待机中'
+          questionText.classList.remove('listening')
+        }
+      })
+
+      // 模拟窗口拖拽
+      const titleBar = document.querySelector('.title-bar')
+      let isDragging = false
+      let currentX
+      let currentY
+      let initialX
+      let initialY
+      let xOffset = 0
+      let yOffset = 0
+
+      titleBar.addEventListener('mousedown', dragStart)
+      document.addEventListener('mousemove', drag)
+      document.addEventListener('mouseup', dragEnd)
+
+      function dragStart (e)
+      {
+        initialX = e.clientX - xOffset
+        initialY = e.clientY - yOffset
+
+        if (e.target === titleBar || titleBar.contains(e.target)) {
+          isDragging = true
+        }
+      }
+
+      function drag (e)
+      {
+        if (isDragging) {
+          e.preventDefault()
+          currentX = e.clientX - initialX
+          currentY = e.clientY - initialY
+
+          xOffset = currentX
+          yOffset = currentY
+
+          document.querySelector('.app-container').style.transform =
+            `translate3d(${currentX}px, ${currentY}px, 0)`
+        }
+      }
+
+      function dragEnd (e)
+      {
+        initialX = currentX
+        initialY = currentY
+        isDragging = false
+      }
+    });
+  </script>
+</body>
+
+</html>

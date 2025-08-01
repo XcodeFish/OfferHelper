@@ -1,0 +1,9 @@
+---
+description: 
+globs:
+alwaysApply: true
+---
+# my-rule
+
+这是一个规则文件，用于帮助 AI 理解您的代码库和遵循项目约定。
+修改文件代码后请检查文件是否有类型等报错，有请解决。

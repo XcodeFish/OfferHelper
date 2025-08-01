@@ -1,0 +1,826 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>OfferHelper - 设置面板原型</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #1a1a1a;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      padding: 20px;
+    }
+
+    .settings-container {
+      width: 500px;
+      max-height: 80vh;
+      background: rgba(0, 0, 0, 0.92);
+      border-radius: 16px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(20px);
+      box-shadow:
+        0 20px 40px rgba(0, 0, 0, 0.4),
+        0 0 0 1px rgba(255, 255, 255, 0.05);
+      overflow: hidden;
+    }
+
+    /* 标题栏 */
+    .title-bar {
+      height: 50px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 20px;
+      color: white;
+    }
+
+    .title-content {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .settings-icon {
+      font-size: 20px;
+    }
+
+    .settings-title {
+      font-size: 16px;
+      font-weight: 600;
+    }
+
+    .close-btn {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      border: none;
+      background: rgba(255, 255, 255, 0.2);
+      color: white;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s ease;
+    }
+
+    .close-btn:hover {
+      background: rgba(255, 255, 255, 0.3);
+      transform: scale(1.1);
+    }
+
+    /* 设置内容 */
+    .settings-content {
+      padding: 24px;
+      max-height: calc(80vh - 50px);
+      overflow-y: auto;
+    }
+
+    /* 设置分组 */
+    .settings-group {
+      margin-bottom: 32px;
+    }
+
+    .group-title {
+      color: #f3f4f6;
+      font-size: 18px;
+      font-weight: 600;
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .group-icon {
+      font-size: 20px;
+    }
+
+    /* 设置项 */
+    .setting-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px;
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 12px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      margin-bottom: 12px;
+      transition: all 0.2s ease;
+    }
+
+    .setting-item:hover {
+      background: rgba(255, 255, 255, 0.08);
+      border-color: rgba(102, 126, 234, 0.3);
+    }
+
+    .setting-info {
+      flex: 1;
+    }
+
+    .setting-label {
+      color: #f3f4f6;
+      font-size: 14px;
+      font-weight: 500;
+      margin-bottom: 4px;
+    }
+
+    .setting-description {
+      color: #9ca3af;
+      font-size: 12px;
+      line-height: 1.4;
+    }
+
+    .setting-control {
+      margin-left: 16px;
+    }
+
+    /* 开关控件 */
+    .toggle-switch {
+      position: relative;
+      width: 48px;
+      height: 24px;
+      background: rgba(255, 255, 255, 0.2);
+      border-radius: 12px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    .toggle-switch.active {
+      background: linear-gradient(135deg, #667eea, #764ba2);
+    }
+
+    .toggle-slider {
+      position: absolute;
+      top: 2px;
+      left: 2px;
+      width: 20px;
+      height: 20px;
+      background: white;
+      border-radius: 50%;
+      transition: all 0.3s ease;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    }
+
+    .toggle-switch.active .toggle-slider {
+      transform: translateX(24px);
+    }
+
+    /* 滑块控件 */
+    .slider-container {
+      width: 120px;
+    }
+
+    .slider {
+      width: 100%;
+      height: 4px;
+      border-radius: 2px;
+      background: rgba(255, 255, 255, 0.2);
+      outline: none;
+      -webkit-appearance: none;
+      appearance: none;
+    }
+
+    .slider::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      cursor: pointer;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    }
+
+    .slider::-moz-range-thumb {
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      cursor: pointer;
+      border: none;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    }
+
+    .slider-value {
+      color: #d1d5db;
+      font-size: 12px;
+      text-align: center;
+      margin-top: 4px;
+    }
+
+    /* 选择框控件 */
+    .select-container {
+      position: relative;
+      width: 140px;
+    }
+
+    .select {
+      width: 100%;
+      padding: 8px 12px;
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 8px;
+      color: #f3f4f6;
+      font-size: 14px;
+      cursor: pointer;
+      outline: none;
+      appearance: none;
+    }
+
+    .select:focus {
+      border-color: #667eea;
+      box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.2);
+    }
+
+    .select option {
+      background: #2d2d2d;
+      color: #f3f4f6;
+    }
+
+    /* 输入框控件 */
+    .input-container {
+      width: 140px;
+    }
+
+    .input {
+      width: 100%;
+      padding: 8px 12px;
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 8px;
+      color: #f3f4f6;
+      font-size: 14px;
+      outline: none;
+    }
+
+    .input:focus {
+      border-color: #667eea;
+      box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.2);
+    }
+
+    .input::placeholder {
+      color: #6b7280;
+    }
+
+    /* 按钮控件 */
+    .btn {
+      padding: 8px 16px;
+      border: none;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      outline: none;
+    }
+
+    .btn.primary {
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      color: white;
+    }
+
+    .btn.primary:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+    }
+
+    .btn.secondary {
+      background: rgba(255, 255, 255, 0.1);
+      color: #d1d5db;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
+    .btn.secondary:hover {
+      background: rgba(255, 255, 255, 0.15);
+      color: #f3f4f6;
+    }
+
+    .btn.danger {
+      background: rgba(239, 68, 68, 0.2);
+      color: #fca5a5;
+      border: 1px solid rgba(239, 68, 68, 0.3);
+    }
+
+    .btn.danger:hover {
+      background: rgba(239, 68, 68, 0.3);
+    }
+
+    /* 快捷键显示 */
+    .shortcut-display {
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 6px;
+      padding: 6px 10px;
+      font-size: 12px;
+      color: #d1d5db;
+      font-family: 'Monaco', 'Menlo', monospace;
+      min-width: 80px;
+      text-align: center;
+    }
+
+    /* 滚动条样式 */
+    .settings-content::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    .settings-content::-webkit-scrollbar-track {
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 3px;
+    }
+
+    .settings-content::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.2);
+      border-radius: 3px;
+    }
+
+    .settings-content::-webkit-scrollbar-thumb:hover {
+      background: rgba(255, 255, 255, 0.3);
+    }
+
+    /* 响应式调整 */
+    @media (max-width: 600px) {
+      .settings-container {
+        width: 90%;
+        max-width: 450px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="settings-container">
+    <!-- 标题栏 -->
+    <div class="title-bar">
+      <div class="title-content">
+        <div class="settings-icon">⚙️</div>
+        <span class="settings-title">设置</span>
+      </div>
+      <button class="close-btn">×</button>
+    </div>
+
+    <!-- 设置内容 -->
+    <div class="settings-content">
+      <!-- 外观设置 -->
+      <div class="settings-group">
+        <div class="group-title">
+          <span class="group-icon">🎨</span>
+          外观设置
+        </div>
+
+        <div class="setting-item">
+          <div class="setting-info">
+            <div class="setting-label">主题模式</div>
+            <div class="setting-description">选择应用的主题外观</div>
+          </div>
+          <div class="setting-control">
+            <div class="select-container">
+              <select class="select">
+                <option value="dark">暗色主题</option>
+                <option value="light">亮色主题</option>
+                <option value="auto">跟随系统</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div class="setting-item">
+          <div class="setting-info">
+            <div class="setting-label">窗口透明度</div>
+            <div class="setting-description">调整窗口的透明程度</div>
+          </div>
+          <div class="setting-control">
+            <div class="slider-container">
+              <input type="range" class="slider" min="0.3" max="1.0" step="0.1" value="0.9">
+              <div class="slider-value">90%</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="setting-item">
+          <div class="setting-info">
+            <div class="setting-label">始终置顶</div>
+            <div class="setting-description">窗口始终显示在其他应用之上</div>
+          </div>
+          <div class="setting-control">
+            <div class="toggle-switch active">
+              <div class="toggle-slider"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="setting-item">
+          <div class="setting-info">
+            <div class="setting-label">窗口位置</div>
+            <div class="setting-description">设置窗口在屏幕上的默认位置</div>
+          </div>
+          <div class="setting-control">
+            <div class="select-container">
+              <select class="select">
+                <option value="top-right">右上角</option>
+                <option value="top-left">左上角</option>
+                <option value="bottom-right">右下角</option>
+                <option value="bottom-left">左下角</option>
+                <option value="center">居中</option>
+              </select>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 隐私保护设置 -->
+      <div class="settings-group">
+        <div class="group-title">
+          <span class="group-icon">🔒</span>
+          隐私保护
+        </div>
+
+        <div class="setting-item">
+          <div class="setting-info">
+            <div class="setting-label">自动隐藏</div>
+            <div class="setting-description">检测到屏幕共享时自动隐藏窗口</div>
+          </div>
+          <div class="setting-control">
+            <div class="toggle-switch active">
+              <div class="toggle-slider"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="setting-item">
+          <div class="setting-info">
+            <div class="setting-label">检测敏感度</div>
+            <div class="setting-description">屏幕共享检测的敏感程度</div>
+          </div>
+          <div class="setting-control">
+            <div class="slider-container">
+              <input type="range" class="slider" min="1" max="5" step="1" value="3">
+              <div class="slider-value">中等</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="setting-item">
+          <div class="setting-info">
+            <div class="setting-label">紧急隐藏快捷键</div>
+            <div class="setting-description">快速隐藏窗口的快捷键组合</div>
+          </div>
+          <div class="setting-control">
+            <div class="shortcut-display">Ctrl+Shift+H</div>
+          </div>
+        </div>
+
+        <div class="setting-item">
+          <div class="setting-info">
+            <div class="setting-label">隐藏动画</div>
+            <div class="setting-description">窗口隐藏时的动画效果</div>
+          </div>
+          <div class="setting-control">
+            <div class="select-container">
+              <select class="select">
+                <option value="fade">淡出</option>
+                <option value="slide">滑动</option>
+                <option value="scale">缩放</option>
+                <option value="instant">瞬间</option>
+              </select>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 语音识别设置 -->
+      <div class="settings-group">
+        <div class="group-title">
+          <span class="group-icon">🎤</span>
+          语音识别
+        </div>
+
+        <div class="setting-item">
+          <div class="setting-info">
+            <div class="setting-label">识别语言</div>
+            <div class="setting-description">语音识别的目标语言</div>
+          </div>
+          <div class="setting-control">
+            <div class="select-container">
+              <select class="select">
+                <option value="zh-CN">中文（简体）</option>
+                <option value="en-US">English (US)</option>
+                <option value="zh-TW">中文（繁体）</option>
+                <option value="ja-JP">日本語</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div class="setting-item">
+          <div class="setting-info">
+            <div class="setting-label">连续识别</div>
+            <div class="setting-description">持续监听语音输入</div>
+          </div>
+          <div class="setting-control">
+            <div class="toggle-switch active">
+              <div class="toggle-slider"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="setting-item">
+          <div class="setting-info">
+            <div class="setting-label">识别敏感度</div>
+            <div class="setting-description">语音识别的敏感程度</div>
+          </div>
+          <div class="setting-control">
+            <div class="slider-container">
+              <input type="range" class="slider" min="0.1" max="1.0" step="0.1" value="0.7">
+              <div class="slider-value">70%</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="setting-item">
+          <div class="setting-info">
+            <div class="setting-label">噪音过滤</div>
+            <div class="setting-description">过滤背景噪音和干扰声音</div>
+          </div>
+          <div class="setting-control">
+            <div class="toggle-switch active">
+              <div class="toggle-slider"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- AI 设置 -->
+      <div class="settings-group">
+        <div class="group-title">
+          <span class="group-icon">🧠</span>
+          AI 分析
+        </div>
+
+        <div class="setting-item">
+          <div class="setting-info">
+            <div class="setting-label">AI 服务提供商</div>
+            <div class="setting-description">选择AI分析服务</div>
+          </div>
+          <div class="setting-control">
+            <div class="select-container">
+              <select class="select">
+                <option value="openai">OpenAI GPT</option>
+                <option value="local">本地模型</option>
+                <option value="claude">Claude</option>
+                <option value="gemini">Gemini</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div class="setting-item">
+          <div class="setting-info">
+            <div class="setting-label">API 密钥</div>
+            <div class="setting-description">输入AI服务的API密钥</div>
+          </div>
+          <div class="setting-control">
+            <div class="input-container">
+              <input type="password" class="input" placeholder="sk-...">
+            </div>
+          </div>
+        </div>
+
+        <div class="setting-item">
+          <div class="setting-info">
+            <div class="setting-label">回答创造性</div>
+            <div class="setting-description">AI回答的创造性程度</div>
+          </div>
+          <div class="setting-control">
+            <div class="slider-container">
+              <input type="range" class="slider" min="0.1" max="1.0" step="0.1" value="0.7">
+              <div class="slider-value">70%</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="setting-item">
+          <div class="setting-info">
+            <div class="setting-label">自动分析</div>
+            <div class="setting-description">识别到问题后自动进行AI分析</div>
+          </div>
+          <div class="setting-control">
+            <div class="toggle-switch active">
+              <div class="toggle-slider"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 快捷键设置 -->
+      <div class="settings-group">
+        <div class="group-title">
+          <span class="group-icon">⌨️</span>
+          快捷键
+        </div>
+
+        <div class="setting-item">
+          <div class="setting-info">
+            <div class="setting-label">切换显示/隐藏</div>
+            <div class="setting-description">快速切换窗口显示状态</div>
+          </div>
+          <div class="setting-control">
+            <div class="shortcut-display">Ctrl+Shift+H</div>
+          </div>
+        </div>
+
+        <div class="setting-item">
+          <div class="setting-info">
+            <div class="setting-label">开始/停止监听</div>
+            <div class="setting-description">控制语音识别开关</div>
+          </div>
+          <div class="setting-control">
+            <div class="shortcut-display">Ctrl+Shift+L</div>
+          </div>
+        </div>
+
+        <div class="setting-item">
+          <div class="setting-info">
+            <div class="setting-label">打开设置</div>
+            <div class="setting-description">快速打开设置面板</div>
+          </div>
+          <div class="setting-control">
+            <div class="shortcut-display">Ctrl+,</div>
+          </div>
+        </div>
+
+        <div class="setting-item">
+          <div class="setting-info">
+            <div class="setting-label">清除历史</div>
+            <div class="setting-description">清除所有问答历史记录</div>
+          </div>
+          <div class="setting-control">
+            <button class="btn danger">清除历史</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 高级设置 -->
+      <div class="settings-group">
+        <div class="group-title">
+          <span class="group-icon">🔧</span>
+          高级设置
+        </div>
+
+        <div class="setting-item">
+          <div class="setting-info">
+            <div class="setting-label">开机自启动</div>
+            <div class="setting-description">系统启动时自动运行应用</div>
+          </div>
+          <div class="setting-control">
+            <div class="toggle-switch">
+              <div class="toggle-slider"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="setting-item">
+          <div class="setting-info">
+            <div class="setting-label">自动更新</div>
+            <div class="setting-description">自动检查并安装应用更新</div>
+          </div>
+          <div class="setting-control">
+            <div class="toggle-switch active">
+              <div class="toggle-slider"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="setting-item">
+          <div class="setting-info">
+            <div class="setting-label">使用统计</div>
+            <div class="setting-description">发送匿名使用统计数据</div>
+          </div>
+          <div class="setting-control">
+            <div class="toggle-switch">
+              <div class="toggle-slider"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="setting-item">
+          <div class="setting-info">
+            <div class="setting-label">调试模式</div>
+            <div class="setting-description">启用详细日志记录</div>
+          </div>
+          <div class="setting-control">
+            <div class="toggle-switch">
+              <div class="toggle-slider"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="setting-item">
+          <div class="setting-info">
+            <div class="setting-label">重置设置</div>
+            <div class="setting-description">恢复所有设置到默认值</div>
+          </div>
+          <div class="setting-control">
+            <button class="btn danger">重置设置</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // 设置面板交互逻辑
+    document.addEventListener('DOMContentLoaded', function ()
+    {
+      // 开关控件交互
+      const toggleSwitches = document.querySelectorAll('.toggle-switch')
+      toggleSwitches.forEach(toggle =>
+      {
+        toggle.addEventListener('click', function ()
+        {
+          this.classList.toggle('active')
+        })
+      })
+
+      // 滑块控件交互
+      const sliders = document.querySelectorAll('.slider')
+      sliders.forEach(slider =>
+      {
+        const valueDisplay = slider.parentNode.querySelector('.slider-value')
+
+        slider.addEventListener('input', function ()
+        {
+          const value = parseFloat(this.value)
+          let displayValue = ''
+
+          // 根据滑块类型显示不同格式的值
+          if (this.min === '0.3' && this.max === '1.0') {
+            // 透明度滑块
+            displayValue = Math.round(value * 100) + '%'
+          } else if (this.min === '1' && this.max === '5') {
+            // 敏感度滑块
+            const levels = ['很低', '低', '中等', '高', '很高']
+            displayValue = levels[value - 1]
+          } else {
+            // 其他滑块显示百分比
+            displayValue = Math.round(value * 100) + '%'
+          }
+
+          valueDisplay.textContent = displayValue
+        })
+      })
+
+      // 关闭按钮
+      const closeBtn = document.querySelector('.close-btn')
+      closeBtn.addEventListener('click', function ()
+      {
+        // 在实际应用中这里会关闭设置窗口
+        console.log('关闭设置面板')
+      })
+
+      // 危险操作确认
+      const dangerBtns = document.querySelectorAll('.btn.danger')
+      dangerBtns.forEach(btn =>
+      {
+        btn.addEventListener('click', function (e)
+        {
+          e.preventDefault()
+          const action = this.textContent.trim()
+          if (confirm(`确定要${action}吗？此操作不可撤销。`)) {
+            console.log(`执行操作: ${action}`)
+          }
+        })
+      })
+
+      // 快捷键设置（模拟）
+      const shortcutDisplays = document.querySelectorAll('.shortcut-display')
+      shortcutDisplays.forEach(display =>
+      {
+        display.addEventListener('click', function ()
+        {
+          this.textContent = '按下新的快捷键...'
+          this.style.background = 'rgba(102, 126, 234, 0.2)'
+
+          // 模拟快捷键录制
+          setTimeout(() =>
+          {
+            this.textContent = 'Ctrl+Shift+' + String.fromCharCode(65 + Math.floor(Math.random() * 26))
+            this.style.background = 'rgba(255, 255, 255, 0.1)'
+          }, 2000)
+        })
+      })
+    });
+  </script>
+</body>
+
+</html>

@@ -1,0 +1,594 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>OfferHelper - 简洁版主界面</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #1a1a1a;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      padding: 20px;
+    }
+
+    .app-container {
+      width: 320px;
+      background: rgba(0, 0, 0, 0.95);
+      border-radius: 12px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(20px);
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
+      overflow: hidden;
+    }
+
+    /* 标题栏 */
+    .title-bar {
+      height: 32px;
+      background: rgba(255, 255, 255, 0.05);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 12px;
+      cursor: move;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    .app-title {
+      color: #9ca3af;
+      font-size: 12px;
+      font-weight: 500;
+    }
+
+    .window-controls {
+      display: flex;
+      gap: 6px;
+    }
+
+    .control-btn {
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      border: none;
+      cursor: pointer;
+      font-size: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .control-btn.minimize {
+      background: #ffbd2e;
+    }
+
+    .control-btn.close {
+      background: #ff5f57;
+      color: white;
+    }
+
+    /* 内容区域 */
+    .content-area {
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    /* 状态指示 */
+    .status-section {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px 12px;
+      background: rgba(255, 255, 255, 0.03);
+      border-radius: 6px;
+      border: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    .status-info {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #6b7280;
+    }
+
+    .status-dot.listening {
+      background: #10b981;
+      animation: pulse 2s infinite;
+    }
+
+    .status-dot.analyzing {
+      background: #f59e0b;
+      animation: pulse 1s infinite;
+    }
+
+    @keyframes pulse {
+
+      0%,
+      100% {
+        opacity: 1;
+      }
+
+      50% {
+        opacity: 0.5;
+      }
+    }
+
+    .status-text {
+      color: #d1d5db;
+      font-size: 12px;
+    }
+
+    .model-selector {
+      position: relative;
+    }
+
+    .model-select {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 4px;
+      color: #d1d5db;
+      font-size: 11px;
+      padding: 4px 8px;
+      cursor: pointer;
+      outline: none;
+    }
+
+    .model-select:focus {
+      border-color: #667eea;
+    }
+
+    .model-select option {
+      background: #2d2d2d;
+      color: #d1d5db;
+    }
+
+    /* 问题显示区域 */
+    .question-section {
+      background: rgba(255, 255, 255, 0.03);
+      border-radius: 8px;
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      min-height: 80px;
+      padding: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .question-text {
+      color: #f3f4f6;
+      font-size: 13px;
+      line-height: 1.4;
+      text-align: center;
+      word-break: break-word;
+    }
+
+    .question-text.placeholder {
+      color: #6b7280;
+      font-style: italic;
+    }
+
+    .question-text.listening {
+      color: #3b82f6;
+    }
+
+    /* 答案显示区域 */
+    .answer-section {
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 8px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      padding: 12px;
+      max-height: 200px;
+      overflow-y: auto;
+      display: none;
+    }
+
+    .answer-section.show {
+      display: block;
+    }
+
+    .answer-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 8px;
+    }
+
+    .answer-title {
+      color: #f3f4f6;
+      font-size: 12px;
+      font-weight: 500;
+    }
+
+    .confidence-badge {
+      background: linear-gradient(135deg, #10b981, #059669);
+      color: white;
+      padding: 2px 6px;
+      border-radius: 8px;
+      font-size: 10px;
+    }
+
+    .answer-text {
+      color: #d1d5db;
+      font-size: 12px;
+      line-height: 1.5;
+      background: rgba(0, 0, 0, 0.2);
+      padding: 8px;
+      border-radius: 4px;
+      border-left: 2px solid #667eea;
+    }
+
+    /* 控制按钮 */
+    .controls-section {
+      display: flex;
+      gap: 8px;
+    }
+
+    .main-btn {
+      flex: 1;
+      height: 36px;
+      border: none;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      transition: all 0.2s ease;
+    }
+
+    .main-btn.primary {
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      color: white;
+    }
+
+    .main-btn.primary:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+    }
+
+    .main-btn.primary.listening {
+      background: linear-gradient(135deg, #ef4444, #dc2626);
+    }
+
+    .settings-btn {
+      width: 36px;
+      height: 36px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 6px;
+      color: #9ca3af;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s ease;
+    }
+
+    .settings-btn:hover {
+      background: rgba(255, 255, 255, 0.1);
+      color: #f3f4f6;
+      border-color: #667eea;
+    }
+
+    /* 音频可视化 */
+    .audio-visualizer {
+      display: none;
+      align-items: center;
+      justify-content: center;
+      gap: 2px;
+      margin-top: 8px;
+      height: 16px;
+    }
+
+    .audio-visualizer.show {
+      display: flex;
+    }
+
+    .wave-bar {
+      width: 2px;
+      height: 3px;
+      background: #667eea;
+      border-radius: 1px;
+      animation: wave 1.5s ease-in-out infinite;
+    }
+
+    .wave-bar:nth-child(1) {
+      animation-delay: 0ms;
+    }
+
+    .wave-bar:nth-child(2) {
+      animation-delay: 100ms;
+    }
+
+    .wave-bar:nth-child(3) {
+      animation-delay: 200ms;
+    }
+
+    .wave-bar:nth-child(4) {
+      animation-delay: 300ms;
+    }
+
+    .wave-bar:nth-child(5) {
+      animation-delay: 400ms;
+    }
+
+    @keyframes wave {
+
+      0%,
+      100% {
+        height: 3px;
+      }
+
+      50% {
+        height: 12px;
+      }
+    }
+
+    /* 滚动条样式 */
+    .answer-section::-webkit-scrollbar {
+      width: 4px;
+    }
+
+    .answer-section::-webkit-scrollbar-track {
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 2px;
+    }
+
+    .answer-section::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.2);
+      border-radius: 2px;
+    }
+
+    /* 响应式调整 */
+    @media (max-width: 360px) {
+      .app-container {
+        width: 100%;
+        margin: 0 10px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="app-container">
+    <!-- 标题栏 -->
+    <div class="title-bar">
+      <span class="app-title">OfferHelper</span>
+      <div class="window-controls">
+        <button class="control-btn minimize">−</button>
+        <button class="control-btn close">×</button>
+      </div>
+    </div>
+
+    <!-- 内容区域 -->
+    <div class="content-area">
+      <!-- 状态和模型选择 -->
+      <div class="status-section">
+        <div class="status-info">
+          <div class="status-dot" id="statusDot"></div>
+          <span class="status-text" id="statusText">待机中</span>
+        </div>
+        <div class="model-selector">
+          <select class="model-select" id="modelSelect">
+            <option value="gpt-3.5">GPT-3.5</option>
+            <option value="gpt-4">GPT-4</option>
+            <option value="claude">Claude</option>
+            <option value="local">本地模型</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- 问题显示区域 -->
+      <div class="question-section">
+        <div class="question-text placeholder" id="questionText">
+          点击开始监听面试官提问
+        </div>
+        <div class="audio-visualizer" id="audioVisualizer">
+          <div class="wave-bar"></div>
+          <div class="wave-bar"></div>
+          <div class="wave-bar"></div>
+          <div class="wave-bar"></div>
+          <div class="wave-bar"></div>
+        </div>
+      </div>
+
+      <!-- 答案显示区域 -->
+      <div class="answer-section" id="answerSection">
+        <div class="answer-header">
+          <span class="answer-title">AI建议回答</span>
+          <div class="confidence-badge" id="confidenceBadge">置信度: 92%</div>
+        </div>
+        <div class="answer-text" id="answerText">
+          我在React项目中有丰富的经验，主要使用Redux和Context API进行状态管理。在大型项目中，我倾向于使用Redux Toolkit来简化状态管理的复杂度...
+        </div>
+      </div>
+
+      <!-- 控制按钮 -->
+      <div class="controls-section">
+        <button class="main-btn primary" id="mainBtn">
+          🎤 开始监听
+        </button>
+        <button class="settings-btn" id="settingsBtn" title="设置">
+          ⚙️
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // 应用状态
+    let appState = {
+      isListening: false,
+      isAnalyzing: false,
+      currentModel: 'gpt-3.5'
+    }
+
+    // DOM 元素
+    const elements = {
+      statusDot: document.getElementById('statusDot'),
+      statusText: document.getElementById('statusText'),
+      questionText: document.getElementById('questionText'),
+      answerSection: document.getElementById('answerSection'),
+      answerText: document.getElementById('answerText'),
+      confidenceBadge: document.getElementById('confidenceBadge'),
+      audioVisualizer: document.getElementById('audioVisualizer'),
+      mainBtn: document.getElementById('mainBtn'),
+      modelSelect: document.getElementById('modelSelect'),
+      settingsBtn: document.getElementById('settingsBtn')
+    }
+
+    // 更新UI状态
+    function updateUI ()
+    {
+      if (appState.isListening) {
+        elements.statusDot.className = 'status-dot listening'
+        elements.statusText.textContent = '正在监听...'
+        elements.questionText.className = 'question-text listening'
+        elements.questionText.textContent = '正在识别面试官语音...'
+        elements.audioVisualizer.className = 'audio-visualizer show'
+        elements.mainBtn.className = 'main-btn primary listening'
+        elements.mainBtn.innerHTML = '🛑 停止监听'
+      } else if (appState.isAnalyzing) {
+        elements.statusDot.className = 'status-dot analyzing'
+        elements.statusText.textContent = 'AI分析中...'
+        elements.audioVisualizer.className = 'audio-visualizer'
+        elements.mainBtn.className = 'main-btn primary'
+        elements.mainBtn.innerHTML = '🧠 分析中...'
+        elements.mainBtn.disabled = true
+      } else {
+        elements.statusDot.className = 'status-dot'
+        elements.statusText.textContent = '待机中'
+        elements.questionText.className = 'question-text placeholder'
+        elements.questionText.textContent = '点击开始面试面试官提问'
+        elements.audioVisualizer.className = 'audio-visualizer'
+        elements.mainBtn.className = 'main-btn primary'
+        elements.mainBtn.innerHTML = '🎤 开始面试'
+        elements.mainBtn.disabled = false
+      }
+    }
+
+    // 模拟语音识别
+    function simulateListening ()
+    {
+      setTimeout(() =>
+      {
+        if (appState.isListening) {
+          elements.questionText.textContent = '请介绍一下你在React项目中的经验...'
+          elements.questionText.className = 'question-text'
+
+          // 模拟识别完成，开始AI分析
+          setTimeout(() =>
+          {
+            if (appState.isListening) {
+              appState.isListening = false
+              appState.isAnalyzing = true
+              updateUI()
+              simulateAnalysis()
+            }
+          }, 2000)
+        }
+      }, 1500)
+    }
+
+    // 模拟AI分析
+    function simulateAnalysis ()
+    {
+      setTimeout(() =>
+      {
+        appState.isAnalyzing = false
+        elements.answerSection.className = 'answer-section show'
+        updateUI()
+      }, 2000)
+    }
+
+    // 主按钮点击事件
+    elements.mainBtn.addEventListener('click', function ()
+    {
+      if (!appState.isListening && !appState.isAnalyzing) {
+        appState.isListening = true
+        elements.answerSection.className = 'answer-section'
+        updateUI()
+        simulateListening()
+      } else if (appState.isListening) {
+        appState.isListening = false
+        updateUI()
+      }
+    })
+
+    // 模型选择事件
+    elements.modelSelect.addEventListener('change', function ()
+    {
+      appState.currentModel = this.value
+      console.log('切换到模型:', appState.currentModel)
+    })
+
+    // 设置按钮事件
+    elements.settingsBtn.addEventListener('click', function ()
+    {
+      alert('设置面板功能开发中...')
+    })
+
+    // 窗口拖拽功能
+    const titleBar = document.querySelector('.title-bar')
+    let isDragging = false
+    let currentX, currentY, initialX, initialY
+    let xOffset = 0, yOffset = 0
+
+    titleBar.addEventListener('mousedown', dragStart)
+    document.addEventListener('mousemove', drag)
+    document.addEventListener('mouseup', dragEnd)
+
+    function dragStart (e)
+    {
+      initialX = e.clientX - xOffset
+      initialY = e.clientY - yOffset
+      if (e.target === titleBar || titleBar.contains(e.target)) {
+        isDragging = true
+      }
+    }
+
+    function drag (e)
+    {
+      if (isDragging) {
+        e.preventDefault()
+        currentX = e.clientX - initialX
+        currentY = e.clientY - initialY
+        xOffset = currentX
+        yOffset = currentY
+        document.querySelector('.app-container').style.transform =
+          `translate3d(${currentX}px, ${currentY}px, 0)`
+      }
+    }
+
+    function dragEnd (e)
+    {
+      initialX = currentX
+      initialY = currentY
+      isDragging = false
+    }
+
+    // 初始化
+    updateUI();
+  </script>
+</body>
+
+</html>

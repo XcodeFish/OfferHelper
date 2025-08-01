@@ -1,0 +1,687 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>OfferHelper - UI 原型设计预览</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      padding: 40px 20px;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    .header {
+      text-align: center;
+      margin-bottom: 60px;
+      color: white;
+    }
+
+    .header h1 {
+      font-size: 48px;
+      font-weight: 700;
+      margin-bottom: 16px;
+      text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+    }
+
+    .header p {
+      font-size: 20px;
+      opacity: 0.9;
+      margin-bottom: 32px;
+    }
+
+    .header .version {
+      display: inline-block;
+      background: rgba(255, 255, 255, 0.2);
+      padding: 8px 16px;
+      border-radius: 20px;
+      font-size: 14px;
+      backdrop-filter: blur(10px);
+    }
+
+    .prototypes-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+      gap: 30px;
+      margin-bottom: 60px;
+    }
+
+    .prototype-card {
+      background: rgba(255, 255, 255, 0.95);
+      border-radius: 20px;
+      padding: 30px;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+      backdrop-filter: blur(10px);
+      transition: all 0.3s ease;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
+    .prototype-card:hover {
+      transform: translateY(-10px);
+      box-shadow: 0 30px 60px rgba(0, 0, 0, 0.15);
+    }
+
+    .card-header {
+      display: flex;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+
+    .card-icon {
+      font-size: 32px;
+      margin-right: 16px;
+    }
+
+    .card-title {
+      font-size: 24px;
+      font-weight: 600;
+      color: #1f2937;
+      margin-bottom: 4px;
+    }
+
+    .card-subtitle {
+      font-size: 14px;
+      color: #6b7280;
+    }
+
+    .card-description {
+      color: #4b5563;
+      line-height: 1.6;
+      margin-bottom: 24px;
+    }
+
+    .card-features {
+      margin-bottom: 24px;
+    }
+
+    .card-features h4 {
+      font-size: 16px;
+      font-weight: 600;
+      color: #374151;
+      margin-bottom: 12px;
+    }
+
+    .features-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .feature-tag {
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      color: white;
+      padding: 4px 12px;
+      border-radius: 12px;
+      font-size: 12px;
+      font-weight: 500;
+    }
+
+    .card-actions {
+      display: flex;
+      gap: 12px;
+    }
+
+    .btn {
+      padding: 12px 24px;
+      border: none;
+      border-radius: 12px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      color: white;
+      flex: 1;
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
+    }
+
+    .btn-secondary {
+      background: rgba(107, 114, 128, 0.1);
+      color: #6b7280;
+      border: 1px solid rgba(107, 114, 128, 0.2);
+    }
+
+    .btn-secondary:hover {
+      background: rgba(107, 114, 128, 0.15);
+      color: #374151;
+    }
+
+    .stats-section {
+      background: rgba(255, 255, 255, 0.95);
+      border-radius: 20px;
+      padding: 40px;
+      margin-bottom: 40px;
+      backdrop-filter: blur(10px);
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+    }
+
+    .stats-title {
+      text-align: center;
+      font-size: 28px;
+      font-weight: 600;
+      color: #1f2937;
+      margin-bottom: 32px;
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 24px;
+    }
+
+    .stat-item {
+      text-align: center;
+      padding: 24px;
+      background: rgba(102, 126, 234, 0.05);
+      border-radius: 16px;
+      border: 1px solid rgba(102, 126, 234, 0.1);
+    }
+
+    .stat-number {
+      font-size: 36px;
+      font-weight: 700;
+      color: #667eea;
+      margin-bottom: 8px;
+    }
+
+    .stat-label {
+      font-size: 14px;
+      color: #6b7280;
+      font-weight: 500;
+    }
+
+    .footer {
+      text-align: center;
+      color: rgba(255, 255, 255, 0.8);
+      margin-top: 40px;
+    }
+
+    .footer a {
+      color: rgba(255, 255, 255, 0.9);
+      text-decoration: none;
+      font-weight: 500;
+    }
+
+    .footer a:hover {
+      color: white;
+    }
+
+    /* 响应式调整 */
+    @media (max-width: 768px) {
+      .header h1 {
+        font-size: 36px;
+      }
+
+      .header p {
+        font-size: 18px;
+      }
+
+      .prototypes-grid {
+        grid-template-columns: 1fr;
+        gap: 20px;
+      }
+
+      .prototype-card {
+        padding: 24px;
+      }
+
+      .stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    <!-- 头部 -->
+    <div class="header">
+      <h1>🎯 OfferHelper</h1>
+      <p>桌面端 UI 原型设计预览</p>
+      <div class="version">Version 1.0.0</div>
+    </div>
+
+    <!-- 统计信息 -->
+    <div class="stats-section">
+      <h2 class="stats-title">📊 设计统计</h2>
+      <div class="stats-grid">
+        <div class="stat-item">
+          <div class="stat-number">4</div>
+          <div class="stat-label">界面原型</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-number">50+</div>
+          <div class="stat-label">交互组件</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-number">2000+</div>
+          <div class="stat-label">代码行数</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-number">100%</div>
+          <div class="stat-label">响应式适配</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 原型预览网格 -->
+    <div class="prototypes-grid">
+      <!-- 主界面原型 -->
+      <div class="prototype-card">
+        <div class="card-header">
+          <div class="card-icon">🎯</div>
+          <div>
+            <div class="card-title">主界面</div>
+            <div class="card-subtitle">面试辅助主界面</div>
+          </div>
+        </div>
+        <div class="card-description">
+          核心的面试辅助界面，包含语音识别、AI 分析、答案建议等主要功能。采用悬浮窗口设计，支持拖拽和透明度调节。
+        </div>
+        <div class="card-features">
+          <h4>主要特性</h4>
+          <div class="features-list">
+            <span class="feature-tag">语音识别</span>
+            <span class="feature-tag">AI 分析</span>
+            <span class="feature-tag">答案建议</span>
+            <span class="feature-tag">音频可视化</span>
+            <span class="feature-tag">窗口拖拽</span>
+          </div>
+        </div>
+        <div class="card-actions">
+          <a href="./01-主界面原型设计.html" class="btn btn-primary" target="_blank">
+            预览界面
+          </a>
+          <button class="btn btn-secondary" onclick="showInfo('main')">
+            详细信息
+          </button>
+        </div>
+      </div>
+
+      <!-- 设置面板原型 -->
+      <div class="prototype-card">
+        <div class="card-header">
+          <div class="card-icon">⚙️</div>
+          <div>
+            <div class="card-title">设置面板</div>
+            <div class="card-subtitle">应用设置和配置</div>
+          </div>
+        </div>
+        <div class="card-description">
+          完整的应用设置界面，包含外观、隐私、语音、AI、快捷键等各项配置选项。支持实时预览和批量操作。
+        </div>
+        <div class="card-features">
+          <h4>主要特性</h4>
+          <div class="features-list">
+            <span class="feature-tag">外观设置</span>
+            <span class="feature-tag">隐私保护</span>
+            <span class="feature-tag">语音配置</span>
+            <span class="feature-tag">AI 设置</span>
+            <span class="feature-tag">快捷键</span>
+          </div>
+        </div>
+        <div class="card-actions">
+          <a href="./02-设置面板原型设计.html" class="btn btn-primary" target="_blank">
+            预览界面
+          </a>
+          <button class="btn btn-secondary" onclick="showInfo('settings')">
+            详细信息
+          </button>
+        </div>
+      </div>
+
+      <!-- 知识库界面原型 -->
+      <div class="prototype-card">
+        <div class="card-header">
+          <div class="card-icon">📚</div>
+          <div>
+            <div class="card-title">知识库</div>
+            <div class="card-subtitle">面试知识点管理</div>
+          </div>
+        </div>
+        <div class="card-description">
+          面试知识点的集中管理界面，支持分类浏览、智能搜索、内容编辑等功能。帮助用户快速查找和学习面试知识。
+        </div>
+        <div class="card-features">
+          <h4>主要特性</h4>
+          <div class="features-list">
+            <span class="feature-tag">分类导航</span>
+            <span class="feature-tag">智能搜索</span>
+            <span class="feature-tag">内容展示</span>
+            <span class="feature-tag">难度标识</span>
+            <span class="feature-tag">收藏编辑</span>
+          </div>
+        </div>
+        <div class="card-actions">
+          <a href="./03-知识库界面原型设计.html" class="btn btn-primary" target="_blank">
+            预览界面
+          </a>
+          <button class="btn btn-secondary" onclick="showInfo('knowledge')">
+            详细信息
+          </button>
+        </div>
+      </div>
+
+      <!-- 历史记录界面原型 -->
+      <div class="prototype-card">
+        <div class="card-header">
+          <div class="card-icon">📜</div>
+          <div>
+            <div class="card-title">历史记录</div>
+            <div class="card-subtitle">面试历史记录管理</div>
+          </div>
+        </div>
+        <div class="card-description">
+          面试历史记录的查看和管理界面，包含统计分析、时间筛选、内容搜索、数据导出等功能。帮助用户回顾面试表现。
+        </div>
+        <div class="card-features">
+          <h4>主要特性</h4>
+          <div class="features-list">
+            <span class="feature-tag">统计分析</span>
+            <span class="feature-tag">时间筛选</span>
+            <span class="feature-tag">记录详情</span>
+            <span class="feature-tag">数据导出</span>
+            <span class="feature-tag">搜索功能</span>
+          </div>
+        </div>
+        <div class="card-actions">
+          <a href="./04-历史记录界面原型设计.html" class="btn btn-primary" target="_blank">
+            预览界面
+          </a>
+          <button class="btn btn-secondary" onclick="showInfo('history')">
+            详细信息
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 页脚 -->
+    <div class="footer">
+      <p>
+        基于 <a href="../README.md">桌面端设计文档</a> 创建 |
+        查看 <a href="./README.md">设计说明</a> |
+        <a href="https://github.com/offerhelper/desktop">GitHub 仓库</a>
+      </p>
+      <p style="margin-top: 16px; font-size: 14px; opacity: 0.7;">
+        OfferHelper Desktop UI Prototypes - 让每一次面试都充满信心 💪
+      </p>
+    </div>
+  </div>
+
+  <script>
+    // 页面交互逻辑
+    document.addEventListener('DOMContentLoaded', function ()
+    {
+      // 添加页面加载动画
+      const cards = document.querySelectorAll('.prototype-card')
+      cards.forEach((card, index) =>
+      {
+        card.style.opacity = '0'
+        card.style.transform = 'translateY(30px)'
+
+        setTimeout(() =>
+        {
+          card.style.transition = 'all 0.6s ease'
+          card.style.opacity = '1'
+          card.style.transform = 'translateY(0)'
+        }, index * 150)
+      })
+
+      // 统计数字动画
+      const statNumbers = document.querySelectorAll('.stat-number')
+      const observer = new IntersectionObserver((entries) =>
+      {
+        entries.forEach(entry =>
+        {
+          if (entry.isIntersecting) {
+            animateNumber(entry.target)
+          }
+        })
+      })
+
+      statNumbers.forEach(number =>
+      {
+        observer.observe(number)
+      })
+    })
+
+    // 数字动画函数
+    function animateNumber (element)
+    {
+      const finalNumber = element.textContent
+      const isPercentage = finalNumber.includes('%')
+      const isPlus = finalNumber.includes('+')
+      const numericValue = parseInt(finalNumber.replace(/[^\d]/g, ''))
+
+      let currentNumber = 0
+      const increment = Math.ceil(numericValue / 30)
+      const timer = setInterval(() =>
+      {
+        currentNumber += increment
+        if (currentNumber >= numericValue) {
+          currentNumber = numericValue
+          clearInterval(timer)
+        }
+
+        let displayValue = currentNumber.toString()
+        if (isPlus && currentNumber === numericValue) displayValue += '+'
+        if (isPercentage) displayValue += '%'
+
+        element.textContent = displayValue
+      }, 50)
+    }
+
+    // 显示详细信息
+    function showInfo (type)
+    {
+      const infoMap = {
+        main: {
+          title: '主界面原型',
+          description: '这是 OfferHelper 的核心界面，专为面试场景设计。界面采用悬浮窗口形式，可以在面试过程中提供实时的语音识别和 AI 分析服务。',
+          features: [
+            '实时语音识别和转录',
+            'AI 智能分析和回答建议',
+            '动态音频可视化效果',
+            '可拖拽的悬浮窗口',
+            '透明度和位置自定义',
+            '快捷键和手势控制'
+          ]
+        },
+        settings: {
+          title: '设置面板原型',
+          description: '完整的应用配置界面，用户可以根据个人需求调整各项设置。界面分为多个功能模块，每个模块都有详细的配置选项。',
+          features: [
+            '外观主题和透明度设置',
+            '隐私保护和自动隐藏',
+            '语音识别参数调节',
+            'AI 服务商和 API 配置',
+            '快捷键自定义设置',
+            '高级功能和调试选项'
+          ]
+        },
+        knowledge: {
+          title: '知识库界面原型',
+          description: '面试知识点的集中管理平台，帮助用户系统性地学习和复习面试相关知识。支持多种分类和智能搜索功能。',
+          features: [
+            '按技术栈分类的知识点',
+            '难度等级和热度标识',
+            '全文搜索和标签筛选',
+            '知识点详情展示',
+            '收藏和编辑功能',
+            '批量导入和导出'
+          ]
+        },
+        history: {
+          title: '历史记录界面原型',
+          description: '面试历史的完整记录和分析工具，帮助用户回顾面试表现，总结经验教训，持续改进面试技巧。',
+          features: [
+            '面试统计数据概览',
+            '按时间范围筛选记录',
+            '问答详情和置信度',
+            '历史记录搜索功能',
+            '数据导出和备份',
+            '面试表现分析报告'
+          ]
+        }
+      }
+
+      const info = infoMap[type]
+      if (!info) return
+
+      const modal = `
+        <div id="info-modal" style="
+          position: fixed;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          background: rgba(0, 0, 0, 0.8);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          z-index: 1000;
+          padding: 20px;
+        ">
+          <div style="
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            max-width: 600px;
+            width: 100%;
+            max-height: 80vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+          ">
+            <div style="
+              display: flex;
+              align-items: center;
+              justify-content: space-between;
+              margin-bottom: 24px;
+            ">
+              <h2 style="
+                font-size: 24px;
+                font-weight: 600;
+                color: #1f2937;
+                margin: 0;
+              ">${info.title}</h2>
+              <button onclick="closeModal()" style="
+                background: none;
+                border: none;
+                font-size: 24px;
+                cursor: pointer;
+                color: #6b7280;
+                padding: 4px;
+              ">×</button>
+            </div>
+            
+            <p style="
+              color: #4b5563;
+              line-height: 1.6;
+              margin-bottom: 24px;
+              font-size: 16px;
+            ">${info.description}</p>
+            
+            <h3 style="
+              font-size: 18px;
+              font-weight: 600;
+              color: #374151;
+              margin-bottom: 16px;
+            ">主要功能特性</h3>
+            
+            <ul style="
+              list-style: none;
+              padding: 0;
+              margin: 0;
+            ">
+              ${info.features.map(feature => `
+                <li style="
+                  display: flex;
+                  align-items: center;
+                  padding: 8px 0;
+                  color: #4b5563;
+                  font-size: 14px;
+                ">
+                  <span style="
+                    color: #667eea;
+                    margin-right: 12px;
+                    font-weight: bold;
+                  ">✓</span>
+                  ${feature}
+                </li>
+              `).join('')}
+            </ul>
+            
+            <div style="
+              margin-top: 32px;
+              text-align: center;
+            ">
+              <button onclick="closeModal()" style="
+                background: linear-gradient(135deg, #667eea, #764ba2);
+                color: white;
+                border: none;
+                padding: 12px 32px;
+                border-radius: 12px;
+                font-size: 14px;
+                font-weight: 600;
+                cursor: pointer;
+              ">关闭</button>
+            </div>
+          </div>
+        </div>
+      `
+
+      document.body.insertAdjacentHTML('beforeend', modal)
+    }
+
+    // 关闭模态框
+    function closeModal ()
+    {
+      const modal = document.getElementById('info-modal')
+      if (modal) {
+        modal.remove()
+      }
+    }
+
+    // 点击模态框背景关闭
+    document.addEventListener('click', function (e)
+    {
+      if (e.target && e.target.id === 'info-modal') {
+        closeModal()
+      }
+    })
+
+    // ESC 键关闭模态框
+    document.addEventListener('keydown', function (e)
+    {
+      if (e.key === 'Escape') {
+        closeModal()
+      }
+    })
+  </script>
+</body>
+
+</html>

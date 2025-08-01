@@ -1,0 +1,930 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>OfferHelper - 历史记录界面原型</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #1a1a1a;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      padding: 20px;
+    }
+
+    .history-container {
+      width: 700px;
+      height: 600px;
+      background: rgba(0, 0, 0, 0.92);
+      border-radius: 16px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(20px);
+      box-shadow:
+        0 20px 40px rgba(0, 0, 0, 0.4),
+        0 0 0 1px rgba(255, 255, 255, 0.05);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* 标题栏 */
+    .title-bar {
+      height: 50px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 20px;
+      color: white;
+    }
+
+    .title-content {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .history-icon {
+      font-size: 20px;
+    }
+
+    .history-title {
+      font-size: 16px;
+      font-weight: 600;
+    }
+
+    .title-actions {
+      display: flex;
+      gap: 8px;
+    }
+
+    .title-btn {
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      border: none;
+      background: rgba(255, 255, 255, 0.2);
+      color: white;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s ease;
+    }
+
+    .title-btn:hover {
+      background: rgba(255, 255, 255, 0.3);
+      transform: scale(1.05);
+    }
+
+    /* 工具栏 */
+    .toolbar {
+      padding: 16px 20px;
+      background: rgba(255, 255, 255, 0.02);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .toolbar-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .filter-select {
+      padding: 6px 12px;
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 8px;
+      color: #f3f4f6;
+      font-size: 14px;
+      cursor: pointer;
+      outline: none;
+    }
+
+    .filter-select option {
+      background: #2d2d2d;
+      color: #f3f4f6;
+    }
+
+    .date-range {
+      color: #9ca3af;
+      font-size: 14px;
+    }
+
+    .toolbar-right {
+      display: flex;
+      gap: 8px;
+    }
+
+    .toolbar-btn {
+      padding: 6px 12px;
+      border: none;
+      border-radius: 6px;
+      font-size: 12px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .toolbar-btn.primary {
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      color: white;
+    }
+
+    .toolbar-btn.secondary {
+      background: rgba(255, 255, 255, 0.1);
+      color: #d1d5db;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
+    .toolbar-btn:hover {
+      transform: translateY(-1px);
+    }
+
+    /* 历史记录内容 */
+    .history-content {
+      flex: 1;
+      padding: 20px;
+      overflow-y: auto;
+    }
+
+    .history-list {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .history-session {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 12px;
+      overflow: hidden;
+      transition: all 0.2s ease;
+    }
+
+    .history-session:hover {
+      background: rgba(255, 255, 255, 0.08);
+      border-color: rgba(102, 126, 234, 0.3);
+    }
+
+    .session-header {
+      padding: 16px 20px;
+      background: rgba(255, 255, 255, 0.02);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      cursor: pointer;
+    }
+
+    .session-info {
+      flex: 1;
+    }
+
+    .session-title {
+      color: #f3f4f6;
+      font-size: 16px;
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+
+    .session-meta {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      color: #9ca3af;
+      font-size: 12px;
+    }
+
+    .session-stats {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      color: #9ca3af;
+      font-size: 12px;
+    }
+
+    .stat-item {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .expand-icon {
+      color: #9ca3af;
+      transition: transform 0.2s ease;
+    }
+
+    .history-session.expanded .expand-icon {
+      transform: rotate(180deg);
+    }
+
+    .session-content {
+      display: none;
+      padding: 0 20px 20px;
+    }
+
+    .history-session.expanded .session-content {
+      display: block;
+    }
+
+    .qa-list {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .qa-item {
+      background: rgba(0, 0, 0, 0.2);
+      border-radius: 8px;
+      padding: 16px;
+      border-left: 3px solid #667eea;
+    }
+
+    .question {
+      color: #f3f4f6;
+      font-size: 14px;
+      font-weight: 500;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+    }
+
+    .question-icon {
+      color: #667eea;
+      font-size: 16px;
+      margin-top: 2px;
+    }
+
+    .answer {
+      color: #d1d5db;
+      font-size: 14px;
+      line-height: 1.5;
+      margin-bottom: 12px;
+      padding-left: 24px;
+    }
+
+    .qa-meta {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding-left: 24px;
+    }
+
+    .qa-info {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      color: #9ca3af;
+      font-size: 11px;
+    }
+
+    .confidence-score {
+      background: rgba(16, 185, 129, 0.2);
+      color: #86efac;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 10px;
+    }
+
+    .qa-actions {
+      display: flex;
+      gap: 6px;
+    }
+
+    .qa-action-btn {
+      width: 24px;
+      height: 24px;
+      border: none;
+      background: rgba(255, 255, 255, 0.1);
+      color: #9ca3af;
+      border-radius: 4px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s ease;
+    }
+
+    .qa-action-btn:hover {
+      background: rgba(255, 255, 255, 0.2);
+      color: #f3f4f6;
+    }
+
+    /* 空状态 */
+    .empty-state {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 300px;
+      color: #6b7280;
+      text-align: center;
+    }
+
+    .empty-icon {
+      font-size: 48px;
+      margin-bottom: 16px;
+    }
+
+    .empty-title {
+      font-size: 18px;
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+
+    .empty-description {
+      font-size: 14px;
+      line-height: 1.5;
+    }
+
+    /* 统计卡片 */
+    .stats-cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+
+    .stat-card {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 8px;
+      padding: 16px;
+      text-align: center;
+    }
+
+    .stat-number {
+      color: #667eea;
+      font-size: 24px;
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+
+    .stat-label {
+      color: #9ca3af;
+      font-size: 12px;
+    }
+
+    /* 滚动条样式 */
+    .history-content::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    .history-content::-webkit-scrollbar-track {
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 3px;
+    }
+
+    .history-content::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.2);
+      border-radius: 3px;
+    }
+
+    .history-content::-webkit-scrollbar-thumb:hover {
+      background: rgba(255, 255, 255, 0.3);
+    }
+
+    /* 响应式调整 */
+    @media (max-width: 800px) {
+      .history-container {
+        width: 95%;
+        height: 90vh;
+      }
+
+      .stats-cards {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="history-container">
+    <!-- 标题栏 -->
+    <div class="title-bar">
+      <div class="title-content">
+        <div class="history-icon">📜</div>
+        <span class="history-title">历史记录</span>
+      </div>
+      <div class="title-actions">
+        <button class="title-btn" title="导出记录">📤</button>
+        <button class="title-btn" title="清空历史">🗑️</button>
+        <button class="title-btn" title="关闭">×</button>
+      </div>
+    </div>
+
+    <!-- 工具栏 -->
+    <div class="toolbar">
+      <div class="toolbar-left">
+        <select class="filter-select">
+          <option value="all">全部记录</option>
+          <option value="today">今天</option>
+          <option value="week">本周</option>
+          <option value="month">本月</option>
+        </select>
+        <span class="date-range">显示最近 30 天的记录</span>
+      </div>
+      <div class="toolbar-right">
+        <button class="toolbar-btn secondary">搜索</button>
+        <button class="toolbar-btn primary">导出</button>
+      </div>
+    </div>
+
+    <!-- 历史记录内容 -->
+    <div class="history-content">
+      <!-- 统计卡片 -->
+      <div class="stats-cards">
+        <div class="stat-card">
+          <div class="stat-number">15</div>
+          <div class="stat-label">面试场次</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-number">127</div>
+          <div class="stat-label">问题总数</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-number">89%</div>
+          <div class="stat-label">平均置信度</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-number">2.3h</div>
+          <div class="stat-label">总使用时长</div>
+        </div>
+      </div>
+
+      <!-- 历史记录列表 -->
+      <div class="history-list">
+        <!-- 面试记录1 -->
+        <div class="history-session">
+          <div class="session-header">
+            <div class="session-info">
+              <div class="session-title">字节跳动 - 前端开发工程师面试</div>
+              <div class="session-meta">
+                <span>📅 2024-01-15 14:30</span>
+                <span>⏱️ 45分钟</span>
+                <span>🏢 字节跳动</span>
+              </div>
+            </div>
+            <div class="session-stats">
+              <div class="stat-item">
+                <span>❓</span>
+                <span>8个问题</span>
+              </div>
+              <div class="stat-item">
+                <span>📊</span>
+                <span>92%置信度</span>
+              </div>
+              <span class="expand-icon">▼</span>
+            </div>
+          </div>
+          <div class="session-content">
+            <div class="qa-list">
+              <div class="qa-item">
+                <div class="question">
+                  <span class="question-icon">❓</span>
+                  请介绍一下React Hooks的使用场景和优势？
+                </div>
+                <div class="answer">
+                  React Hooks是React 16.8引入的新特性，主要用于在函数组件中使用状态和其他React特性。主要优势包括：1. 更简洁的代码结构；2. 更好的逻辑复用；3. 更容易测试；4.
+                  避免了class组件的复杂性...
+                </div>
+                <div class="qa-meta">
+                  <div class="qa-info">
+                    <span>14:32</span>
+                    <span class="confidence-score">95%</span>
+                    <span>React, Hooks</span>
+                  </div>
+                  <div class="qa-actions">
+                    <button class="qa-action-btn" title="复制">📋</button>
+                    <button class="qa-action-btn" title="收藏">⭐</button>
+                    <button class="qa-action-btn" title="编辑">✏️</button>
+                  </div>
+                </div>
+              </div>
+
+              <div class="qa-item">
+                <div class="question">
+                  <span class="question-icon">❓</span>
+                  如何优化React应用的性能？
+                </div>
+                <div class="answer">
+                  React性能优化主要从以下几个方面入手：1. 使用React.memo避免不必要的重渲染；2. 使用useMemo和useCallback缓存计算结果和函数；3. 代码分割和懒加载；4.
+                  虚拟化长列表；5. 优化bundle大小...
+                </div>
+                <div class="qa-meta">
+                  <div class="qa-info">
+                    <span>14:38</span>
+                    <span class="confidence-score">88%</span>
+                    <span>React, 性能优化</span>
+                  </div>
+                  <div class="qa-actions">
+                    <button class="qa-action-btn" title="复制">📋</button>
+                    <button class="qa-action-btn" title="收藏">⭐</button>
+                    <button class="qa-action-btn" title="编辑">✏️</button>
+                  </div>
+                </div>
+              </div>
+
+              <div class="qa-item">
+                <div class="question">
+                  <span class="question-icon">❓</span>
+                  说说你对TypeScript的理解和使用经验？
+                </div>
+                <div class="answer">
+                  TypeScript是JavaScript的超集，添加了静态类型检查。主要优势：1. 编译时错误检查；2. 更好的IDE支持；3. 代码可读性和维护性提升；4.
+                  重构更安全。在项目中主要用于接口定义、类型约束和错误预防...
+                </div>
+                <div class="qa-meta">
+                  <div class="qa-info">
+                    <span>14:45</span>
+                    <span class="confidence-score">91%</span>
+                    <span>TypeScript, 类型系统</span>
+                  </div>
+                  <div class="qa-actions">
+                    <button class="qa-action-btn" title="复制">📋</button>
+                    <button class="qa-action-btn" title="收藏">⭐</button>
+                    <button class="qa-action-btn" title="编辑">✏️</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 面试记录2 -->
+        <div class="history-session">
+          <div class="session-header">
+            <div class="session-info">
+              <div class="session-title">腾讯 - 高级前端开发工程师面试</div>
+              <div class="session-meta">
+                <span>📅 2024-01-12 10:00</span>
+                <span>⏱️ 60分钟</span>
+                <span>🏢 腾讯</span>
+              </div>
+            </div>
+            <div class="session-stats">
+              <div class="stat-item">
+                <span>❓</span>
+                <span>12个问题</span>
+              </div>
+              <div class="stat-item">
+                <span>📊</span>
+                <span>87%置信度</span>
+              </div>
+              <span class="expand-icon">▼</span>
+            </div>
+          </div>
+          <div class="session-content">
+            <div class="qa-list">
+              <div class="qa-item">
+                <div class="question">
+                  <span class="question-icon">❓</span>
+                  请设计一个前端监控系统的架构？
+                </div>
+                <div class="answer">
+                  前端监控系统主要包括：1. 数据收集层（错误监控、性能监控、用户行为监控）；2. 数据传输层（数据上报、批量发送、失败重试）；3. 数据处理层（数据清洗、聚合分析）；4.
+                  数据展示层（Dashboard、告警系统）...
+                </div>
+                <div class="qa-meta">
+                  <div class="qa-info">
+                    <span>10:15</span>
+                    <span class="confidence-score">85%</span>
+                    <span>系统设计, 监控</span>
+                  </div>
+                  <div class="qa-actions">
+                    <button class="qa-action-btn" title="复制">📋</button>
+                    <button class="qa-action-btn" title="收藏">⭐</button>
+                    <button class="qa-action-btn" title="编辑">✏️</button>
+                  </div>
+                </div>
+              </div>
+
+              <div class="qa-item">
+                <div class="question">
+                  <span class="question-icon">❓</span>
+                  如何实现一个高性能的虚拟滚动组件？
+                </div>
+                <div class="answer">
+                  虚拟滚动的核心思想是只渲染可视区域的元素。实现要点：1. 计算可视区域的起始和结束索引；2. 动态创建和销毁DOM元素；3. 使用transform或position定位元素；4.
+                  监听滚动事件并节流处理；5. 处理不等高元素的情况...
+                </div>
+                <div class="qa-meta">
+                  <div class="qa-info">
+                    <span>10:28</span>
+                    <span class="confidence-score">89%</span>
+                    <span>虚拟滚动, 性能优化</span>
+                  </div>
+                  <div class="qa-actions">
+                    <button class="qa-action-btn" title="复制">📋</button>
+                    <button class="qa-action-btn" title="收藏">⭐</button>
+                    <button class="qa-action-btn" title="编辑">✏️</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 面试记录3 -->
+        <div class="history-session">
+          <div class="session-header">
+            <div class="session-info">
+              <div class="session-title">阿里巴巴 - 前端技术专家面试</div>
+              <div class="session-meta">
+                <span>📅 2024-01-10 16:00</span>
+                <span>⏱️ 50分钟</span>
+                <span>🏢 阿里巴巴</span>
+              </div>
+            </div>
+            <div class="session-stats">
+              <div class="stat-item">
+                <span>❓</span>
+                <span>10个问题</span>
+              </div>
+              <div class="stat-item">
+                <span>📊</span>
+                <span>93%置信度</span>
+              </div>
+              <span class="expand-icon">▼</span>
+            </div>
+          </div>
+          <div class="session-content">
+            <div class="qa-list">
+              <div class="qa-item">
+                <div class="question">
+                  <span class="question-icon">❓</span>
+                  谈谈你对微前端架构的理解和实践？
+                </div>
+                <div class="answer">
+                  微前端是将前端应用分解为多个独立的、可部署的微应用的架构模式。主要优势：1. 技术栈无关；2. 独立开发部署；3. 团队自治；4.
+                  增量升级。实现方案包括：single-spa、qiankun、Module Federation等...
+                </div>
+                <div class="qa-meta">
+                  <div class="qa-info">
+                    <span>16:12</span>
+                    <span class="confidence-score">94%</span>
+                    <span>微前端, 架构设计</span>
+                  </div>
+                  <div class="qa-actions">
+                    <button class="qa-action-btn" title="复制">📋</button>
+                    <button class="qa-action-btn" title="收藏">⭐</button>
+                    <button class="qa-action-btn" title="编辑">✏️</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // 历史记录界面交互逻辑
+    document.addEventListener('DOMContentLoaded', function ()
+    {
+      // 面试记录展开/收起
+      const sessionHeaders = document.querySelectorAll('.session-header')
+      sessionHeaders.forEach(header =>
+      {
+        header.addEventListener('click', function ()
+        {
+          const session = this.closest('.history-session')
+          session.classList.toggle('expanded')
+        })
+      })
+
+      // 筛选功能
+      const filterSelect = document.querySelector('.filter-select')
+      filterSelect.addEventListener('change', function ()
+      {
+        const filterValue = this.value
+        console.log('筛选条件:', filterValue)
+        filterSessions(filterValue)
+      })
+
+      // QA操作按钮
+      const qaActionBtns = document.querySelectorAll('.qa-action-btn')
+      qaActionBtns.forEach(btn =>
+      {
+        btn.addEventListener('click', function (e)
+        {
+          e.stopPropagation()
+          const action = this.getAttribute('title')
+          console.log('QA操作:', action)
+
+          if (action === '复制') {
+            const qaItem = this.closest('.qa-item')
+            const question = qaItem.querySelector('.question').textContent.trim()
+            const answer = qaItem.querySelector('.answer').textContent.trim()
+            const content = `问题：${question}\n\n回答：${answer}`
+
+            navigator.clipboard.writeText(content).then(() =>
+            {
+              this.textContent = '✓'
+              setTimeout(() =>
+              {
+                this.textContent = '📋'
+              }, 2000)
+            })
+          } else if (action === '收藏') {
+            this.style.color = this.style.color === 'gold' ? '#9ca3af' : 'gold'
+          }
+        })
+      })
+
+      // 标题栏按钮
+      const titleBtns = document.querySelectorAll('.title-btn')
+      titleBtns.forEach(btn =>
+      {
+        btn.addEventListener('click', function ()
+        {
+          const action = this.getAttribute('title')
+          console.log('标题栏操作:', action)
+
+          if (action === '导出记录') {
+            exportHistory()
+          } else if (action === '清空历史') {
+            if (confirm('确定要清空所有历史记录吗？此操作不可撤销。')) {
+              clearHistory()
+            }
+          } else if (action === '关闭') {
+            console.log('关闭历史记录')
+          }
+        })
+      })
+
+      // 工具栏按钮
+      const toolbarBtns = document.querySelectorAll('.toolbar-btn')
+      toolbarBtns.forEach(btn =>
+      {
+        btn.addEventListener('click', function ()
+        {
+          const action = this.textContent.trim()
+          console.log('工具栏操作:', action)
+
+          if (action === '搜索') {
+            showSearchDialog()
+          } else if (action === '导出') {
+            exportHistory()
+          }
+        })
+      })
+
+      // 筛选面试记录
+      function filterSessions (filter)
+      {
+        const sessions = document.querySelectorAll('.history-session')
+        const now = new Date()
+
+        sessions.forEach(session =>
+        {
+          const dateText = session.querySelector('.session-meta span').textContent
+          const sessionDate = new Date(dateText.replace('📅 ', ''))
+          let shouldShow = true
+
+          switch (filter) {
+            case 'today':
+              shouldShow = sessionDate.toDateString() === now.toDateString()
+              break
+            case 'week':
+              const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
+              shouldShow = sessionDate >= weekAgo
+              break
+            case 'month':
+              const monthAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000)
+              shouldShow = sessionDate >= monthAgo
+              break
+            default:
+              shouldShow = true
+          }
+
+          session.style.display = shouldShow ? 'block' : 'none'
+        })
+
+        // 更新日期范围显示
+        const dateRange = document.querySelector('.date-range')
+        const rangeTexts = {
+          'all': '显示所有记录',
+          'today': '显示今天的记录',
+          'week': '显示最近 7 天的记录',
+          'month': '显示最近 30 天的记录'
+        }
+        dateRange.textContent = rangeTexts[filter] || '显示所有记录'
+      }
+
+      // 导出历史记录
+      function exportHistory ()
+      {
+        const sessions = document.querySelectorAll('.history-session')
+        let exportData = '# OfferHelper 面试历史记录\n\n'
+
+        sessions.forEach(session =>
+        {
+          const title = session.querySelector('.session-title').textContent
+          const meta = session.querySelector('.session-meta').textContent
+          exportData += `## ${title}\n${meta}\n\n`
+
+          const qaItems = session.querySelectorAll('.qa-item')
+          qaItems.forEach((qa, index) =>
+          {
+            const question = qa.querySelector('.question').textContent.replace('❓', '').trim()
+            const answer = qa.querySelector('.answer').textContent.trim()
+            exportData += `### 问题 ${index + 1}\n**Q:** ${question}\n\n**A:** ${answer}\n\n`
+          })
+
+          exportData += '---\n\n'
+        })
+
+        // 创建下载链接
+        const blob = new Blob([exportData], { type: 'text/markdown' })
+        const url = URL.createObjectURL(blob)
+        const a = document.createElement('a')
+        a.href = url
+        a.download = `面试历史记录_${new Date().toISOString().split('T')[0]}.md`
+        a.click()
+        URL.revokeObjectURL(url)
+
+        console.log('历史记录已导出')
+      }
+
+      // 清空历史记录
+      function clearHistory ()
+      {
+        const historyList = document.querySelector('.history-list')
+        const statsCards = document.querySelectorAll('.stat-number')
+
+        // 清空列表
+        historyList.innerHTML = `
+          <div class="empty-state">
+            <div class="empty-icon">📝</div>
+            <div class="empty-title">暂无历史记录</div>
+            <div class="empty-description">开始你的第一次面试，记录将会显示在这里</div>
+          </div>
+        `
+
+        // 重置统计数据
+        statsCards[0].textContent = '0'
+        statsCards[1].textContent = '0'
+        statsCards[2].textContent = '0%'
+        statsCards[3].textContent = '0h'
+
+        console.log('历史记录已清空')
+      }
+
+      // 显示搜索对话框
+      function showSearchDialog ()
+      {
+        const query = prompt('请输入搜索关键词：')
+        if (query) {
+          searchHistory(query)
+        }
+      }
+
+      // 搜索历史记录
+      function searchHistory (query)
+      {
+        const sessions = document.querySelectorAll('.history-session')
+        const searchTerm = query.toLowerCase()
+
+        sessions.forEach(session =>
+        {
+          const title = session.querySelector('.session-title').textContent.toLowerCase()
+          const qaItems = session.querySelectorAll('.qa-item')
+          let hasMatch = title.includes(searchTerm)
+
+          if (!hasMatch) {
+            qaItems.forEach(qa =>
+            {
+              const question = qa.querySelector('.question').textContent.toLowerCase()
+              const answer = qa.querySelector('.answer').textContent.toLowerCase()
+              if (question.includes(searchTerm) || answer.includes(searchTerm)) {
+                hasMatch = true
+              }
+            })
+          }
+
+          session.style.display = hasMatch ? 'block' : 'none'
+        })
+
+        console.log('搜索完成:', query)
+      }
+    });
+  </script>
+</body>
+
+</html>

@@ -1,0 +1,815 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>OfferHelper - 知识库界面原型</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #1a1a1a;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      padding: 20px;
+    }
+
+    .knowledge-container {
+      width: 600px;
+      height: 700px;
+      background: rgba(0, 0, 0, 0.92);
+      border-radius: 16px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(20px);
+      box-shadow:
+        0 20px 40px rgba(0, 0, 0, 0.4),
+        0 0 0 1px rgba(255, 255, 255, 0.05);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* 标题栏 */
+    .title-bar {
+      height: 50px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 20px;
+      color: white;
+    }
+
+    .title-content {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .knowledge-icon {
+      font-size: 20px;
+    }
+
+    .knowledge-title {
+      font-size: 16px;
+      font-weight: 600;
+    }
+
+    .title-actions {
+      display: flex;
+      gap: 8px;
+    }
+
+    .title-btn {
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      border: none;
+      background: rgba(255, 255, 255, 0.2);
+      color: white;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s ease;
+    }
+
+    .title-btn:hover {
+      background: rgba(255, 255, 255, 0.3);
+      transform: scale(1.05);
+    }
+
+    /* 搜索栏 */
+    .search-bar {
+      padding: 16px 20px;
+      background: rgba(255, 255, 255, 0.02);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .search-container {
+      position: relative;
+    }
+
+    .search-input {
+      width: 100%;
+      padding: 12px 16px 12px 44px;
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 12px;
+      color: #f3f4f6;
+      font-size: 14px;
+      outline: none;
+      transition: all 0.2s ease;
+    }
+
+    .search-input:focus {
+      border-color: #667eea;
+      box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.2);
+      background: rgba(255, 255, 255, 0.15);
+    }
+
+    .search-input::placeholder {
+      color: #9ca3af;
+    }
+
+    .search-icon {
+      position: absolute;
+      left: 16px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: #9ca3af;
+      font-size: 16px;
+    }
+
+    /* 分类标签 */
+    .category-tabs {
+      display: flex;
+      padding: 0 20px;
+      background: rgba(255, 255, 255, 0.02);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      overflow-x: auto;
+    }
+
+    .category-tab {
+      padding: 12px 16px;
+      background: none;
+      border: none;
+      color: #9ca3af;
+      font-size: 14px;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: all 0.2s ease;
+      border-bottom: 2px solid transparent;
+    }
+
+    .category-tab:hover {
+      color: #d1d5db;
+    }
+
+    .category-tab.active {
+      color: #667eea;
+      border-bottom-color: #667eea;
+    }
+
+    /* 知识库内容 */
+    .knowledge-content {
+      flex: 1;
+      padding: 20px;
+      overflow-y: auto;
+    }
+
+    .knowledge-list {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .knowledge-item {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 12px;
+      padding: 16px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .knowledge-item:hover {
+      background: rgba(255, 255, 255, 0.08);
+      border-color: rgba(102, 126, 234, 0.3);
+      transform: translateY(-1px);
+    }
+
+    .knowledge-item.expanded {
+      background: rgba(102, 126, 234, 0.1);
+      border-color: rgba(102, 126, 234, 0.3);
+    }
+
+    .item-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 8px;
+    }
+
+    .item-title {
+      color: #f3f4f6;
+      font-size: 16px;
+      font-weight: 600;
+      flex: 1;
+    }
+
+    .item-meta {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .difficulty-badge {
+      padding: 4px 8px;
+      border-radius: 12px;
+      font-size: 11px;
+      font-weight: 500;
+    }
+
+    .difficulty-easy {
+      background: rgba(34, 197, 94, 0.2);
+      color: #86efac;
+    }
+
+    .difficulty-medium {
+      background: rgba(251, 191, 36, 0.2);
+      color: #fde047;
+    }
+
+    .difficulty-hard {
+      background: rgba(239, 68, 68, 0.2);
+      color: #fca5a5;
+    }
+
+    .frequency-badge {
+      background: rgba(156, 163, 175, 0.2);
+      color: #d1d5db;
+      padding: 4px 8px;
+      border-radius: 12px;
+      font-size: 11px;
+    }
+
+    .expand-icon {
+      color: #9ca3af;
+      transition: transform 0.2s ease;
+    }
+
+    .knowledge-item.expanded .expand-icon {
+      transform: rotate(180deg);
+    }
+
+    .item-preview {
+      color: #d1d5db;
+      font-size: 14px;
+      line-height: 1.5;
+      margin-bottom: 12px;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+
+    .item-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+    .tag {
+      background: rgba(102, 126, 234, 0.2);
+      color: #a5b4fc;
+      padding: 4px 8px;
+      border-radius: 12px;
+      font-size: 11px;
+      font-weight: 500;
+    }
+
+    .item-content {
+      display: none;
+      margin-top: 16px;
+      padding-top: 16px;
+      border-top: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .knowledge-item.expanded .item-content {
+      display: block;
+    }
+
+    .content-text {
+      color: #f3f4f6;
+      font-size: 14px;
+      line-height: 1.6;
+      margin-bottom: 16px;
+    }
+
+    .content-actions {
+      display: flex;
+      gap: 8px;
+    }
+
+    .action-btn {
+      padding: 6px 12px;
+      border: none;
+      border-radius: 6px;
+      font-size: 12px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .action-btn.primary {
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      color: white;
+    }
+
+    .action-btn.secondary {
+      background: rgba(255, 255, 255, 0.1);
+      color: #d1d5db;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
+    .action-btn:hover {
+      transform: translateY(-1px);
+    }
+
+    /* 空状态 */
+    .empty-state {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 300px;
+      color: #6b7280;
+      text-align: center;
+    }
+
+    .empty-icon {
+      font-size: 48px;
+      margin-bottom: 16px;
+    }
+
+    .empty-title {
+      font-size: 18px;
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+
+    .empty-description {
+      font-size: 14px;
+      line-height: 1.5;
+    }
+
+    /* 滚动条样式 */
+    .knowledge-content::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    .knowledge-content::-webkit-scrollbar-track {
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 3px;
+    }
+
+    .knowledge-content::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.2);
+      border-radius: 3px;
+    }
+
+    .knowledge-content::-webkit-scrollbar-thumb:hover {
+      background: rgba(255, 255, 255, 0.3);
+    }
+
+    /* 响应式调整 */
+    @media (max-width: 700px) {
+      .knowledge-container {
+        width: 95%;
+        height: 90vh;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="knowledge-container">
+    <!-- 标题栏 -->
+    <div class="title-bar">
+      <div class="title-content">
+        <div class="knowledge-icon">📚</div>
+        <span class="knowledge-title">知识库</span>
+      </div>
+      <div class="title-actions">
+        <button class="title-btn" title="添加知识点">+</button>
+        <button class="title-btn" title="导入数据">📥</button>
+        <button class="title-btn" title="关闭">×</button>
+      </div>
+    </div>
+
+    <!-- 搜索栏 -->
+    <div class="search-bar">
+      <div class="search-container">
+        <div class="search-icon">🔍</div>
+        <input type="text" class="search-input" placeholder="搜索面试问题、技术知识点...">
+      </div>
+    </div>
+
+    <!-- 分类标签 -->
+    <div class="category-tabs">
+      <button class="category-tab active">全部</button>
+      <button class="category-tab">前端技术</button>
+      <button class="category-tab">后端技术</button>
+      <button class="category-tab">算法数据结构</button>
+      <button class="category-tab">系统设计</button>
+      <button class="category-tab">行为面试</button>
+      <button class="category-tab">项目经验</button>
+    </div>
+
+    <!-- 知识库内容 -->
+    <div class="knowledge-content">
+      <div class="knowledge-list">
+        <!-- 知识点1 -->
+        <div class="knowledge-item">
+          <div class="item-header">
+            <div class="item-title">React Hooks 的使用原理和最佳实践</div>
+            <div class="item-meta">
+              <span class="difficulty-badge difficulty-medium">中等</span>
+              <span class="frequency-badge">热度: 95%</span>
+              <span class="expand-icon">▼</span>
+            </div>
+          </div>
+          <div class="item-preview">
+            React Hooks 是 React 16.8 引入的新特性，允许在函数组件中使用状态和其他 React 特性。主要包括 useState、useEffect、useContext 等...
+          </div>
+          <div class="item-tags">
+            <span class="tag">React</span>
+            <span class="tag">Hooks</span>
+            <span class="tag">函数组件</span>
+            <span class="tag">状态管理</span>
+          </div>
+          <div class="item-content">
+            <div class="content-text">
+              <strong>核心概念：</strong><br>
+              1. useState: 在函数组件中添加状态<br>
+              2. useEffect: 处理副作用，相当于 componentDidMount、componentDidUpdate 和 componentWillUnmount 的组合<br>
+              3. useContext: 消费 Context 值<br>
+              4. useReducer: useState 的替代方案，适用于复杂状态逻辑<br><br>
+              
+              <strong>使用规则：</strong><br>
+              - 只在函数最顶层调用 Hook<br>
+              - 只在 React 函数中调用 Hook<br>
+              - 使用 ESLint 插件确保规则遵循<br><br>
+              
+              <strong>最佳实践：</strong><br>
+              - 使用多个 useState 分离不相关的状态<br>
+              - useEffect 的依赖数组要包含所有使用的变量<br>
+              - 自定义 Hook 提取组件逻辑
+            </div>
+            <div class="content-actions">
+              <button class="action-btn primary">复制回答</button>
+              <button class="action-btn secondary">编辑</button>
+              <button class="action-btn secondary">收藏</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 知识点2 -->
+        <div class="knowledge-item">
+          <div class="item-header">
+            <div class="item-title">JavaScript 闭包的原理和应用场景</div>
+            <div class="item-meta">
+              <span class="difficulty-badge difficulty-hard">困难</span>
+              <span class="frequency-badge">热度: 88%</span>
+              <span class="expand-icon">▼</span>
+            </div>
+          </div>
+          <div class="item-preview">
+            闭包是指有权访问另一个函数作用域中变量的函数。闭包在 JavaScript 中非常重要，是许多高级特性的基础...
+          </div>
+          <div class="item-tags">
+            <span class="tag">JavaScript</span>
+            <span class="tag">闭包</span>
+            <span class="tag">作用域</span>
+            <span class="tag">内存管理</span>
+          </div>
+          <div class="item-content">
+            <div class="content-text">
+              <strong>定义：</strong><br>
+              闭包是指有权访问另一个函数作用域中变量的函数，创建闭包的常见方式是在一个函数内部创建另一个函数。<br><br>
+              
+              <strong>形成条件：</strong><br>
+              1. 函数嵌套<br>
+              2. 内部函数引用外部函数的变量<br>
+              3. 外部函数被调用<br><br>
+              
+              <strong>应用场景：</strong><br>
+              - 模块化开发（IIFE）<br>
+              - 数据私有化<br>
+              - 函数柯里化<br>
+              - 回调函数<br>
+              - 防抖和节流<br><br>
+              
+              <strong>注意事项：</strong><br>
+              - 可能导致内存泄漏<br>
+              - 性能考虑<br>
+              - 及时清理不需要的引用
+            </div>
+            <div class="content-actions">
+              <button class="action-btn primary">复制回答</button>
+              <button class="action-btn secondary">编辑</button>
+              <button class="action-btn secondary">收藏</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 知识点3 -->
+        <div class="knowledge-item">
+          <div class="item-header">
+            <div class="item-title">HTTP 和 HTTPS 的区别及工作原理</div>
+            <div class="item-meta">
+              <span class="difficulty-badge difficulty-easy">简单</span>
+              <span class="frequency-badge">热度: 92%</span>
+              <span class="expand-icon">▼</span>
+            </div>
+          </div>
+          <div class="item-preview">
+            HTTP 是超文本传输协议，HTTPS 是 HTTP 的安全版本。主要区别在于 HTTPS 使用了 SSL/TLS 加密...
+          </div>
+          <div class="item-tags">
+            <span class="tag">HTTP</span>
+            <span class="tag">HTTPS</span>
+            <span class="tag">网络协议</span>
+            <span class="tag">安全</span>
+          </div>
+          <div class="item-content">
+            <div class="content-text">
+              <strong>主要区别：</strong><br>
+              1. 安全性：HTTPS 使用 SSL/TLS 加密，HTTP 明文传输<br>
+              2. 端口：HTTP 使用 80 端口，HTTPS 使用 443 端口<br>
+              3. 证书：HTTPS 需要 SSL 证书<br>
+              4. 性能：HTTPS 有额外的加密解密开销<br><br>
+              
+              <strong>HTTPS 工作原理：</strong><br>
+              1. 客户端发起 HTTPS 请求<br>
+              2. 服务器返回证书<br>
+              3. 客户端验证证书<br>
+              4. 协商加密算法<br>
+              5. 建立安全连接<br>
+              6. 加密数据传输<br><br>
+              
+              <strong>优势：</strong><br>
+              - 数据加密传输<br>
+              - 身份验证<br>
+              - 数据完整性<br>
+              - SEO 友好
+            </div>
+            <div class="content-actions">
+              <button class="action-btn primary">复制回答</button>
+              <button class="action-btn secondary">编辑</button>
+              <button class="action-btn secondary">收藏</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 知识点4 -->
+        <div class="knowledge-item">
+          <div class="item-header">
+            <div class="item-title">Vue.js 响应式原理详解</div>
+            <div class="item-meta">
+              <span class="difficulty-badge difficulty-hard">困难</span>
+              <span class="frequency-badge">热度: 85%</span>
+              <span class="expand-icon">▼</span>
+            </div>
+          </div>
+          <div class="item-preview">
+            Vue.js 的响应式系统是其核心特性之一，通过数据劫持和发布订阅模式实现数据变化的自动检测和视图更新...
+          </div>
+          <div class="item-tags">
+            <span class="tag">Vue.js</span>
+            <span class="tag">响应式</span>
+            <span class="tag">数据劫持</span>
+            <span class="tag">观察者模式</span>
+          </div>
+          <div class="item-content">
+            <div class="content-text">
+              <strong>Vue 2.x 响应式原理：</strong><br>
+              1. 数据劫持：使用 Object.defineProperty 劫持对象属性<br>
+              2. 依赖收集：在 getter 中收集依赖<br>
+              3. 派发更新：在 setter 中通知依赖更新<br>
+              4. 异步更新：使用 nextTick 批量更新<br><br>
+              
+              <strong>Vue 3.x 响应式原理：</strong><br>
+              1. Proxy 代理：使用 Proxy 替代 Object.defineProperty<br>
+              2. Ref 和 Reactive：提供更灵活的响应式 API<br>
+              3. 更好的性能：减少不必要的依赖收集<br><br>
+              
+              <strong>核心概念：</strong><br>
+              - Observer：观察者，负责数据劫持<br>
+              - Dep：依赖收集器<br>
+              - Watcher：观察者，响应数据变化<br>
+              - Scheduler：调度器，管理更新队列
+            </div>
+            <div class="content-actions">
+              <button class="action-btn primary">复制回答</button>
+              <button class="action-btn secondary">编辑</button>
+              <button class="action-btn secondary">收藏</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 知识点5 -->
+        <div class="knowledge-item">
+          <div class="item-header">
+            <div class="item-title">算法：二分查找的实现和应用</div>
+            <div class="item-meta">
+              <span class="difficulty-badge difficulty-medium">中等</span>
+              <span class="frequency-badge">热度: 78%</span>
+              <span class="expand-icon">▼</span>
+            </div>
+          </div>
+          <div class="item-preview">
+            二分查找是一种高效的查找算法，适用于有序数组。时间复杂度为 O(log n)，空间复杂度为 O(1)...
+          </div>
+          <div class="item-tags">
+            <span class="tag">算法</span>
+            <span class="tag">二分查找</span>
+            <span class="tag">时间复杂度</span>
+            <span class="tag">数组</span>
+          </div>
+          <div class="item-content">
+            <div class="content-text">
+              <strong>算法思想：</strong><br>
+              在有序数组中，通过比较中间元素与目标值，每次排除一半的搜索空间。<br><br>
+              
+              <strong>实现步骤：</strong><br>
+              1. 设置左右边界 left = 0, right = arr.length - 1<br>
+              2. 计算中间位置 mid = (left + right) / 2<br>
+              3. 比较 arr[mid] 与目标值<br>
+              4. 根据比较结果调整边界<br>
+              5. 重复直到找到或边界相遇<br><br>
+              
+              <strong>应用场景：</strong><br>
+              - 有序数组查找<br>
+              - 查找插入位置<br>
+              - 查找边界值<br>
+              - 峰值查找<br><br>
+              
+              <strong>注意事项：</strong><br>
+              - 数组必须有序<br>
+              - 防止整数溢出<br>
+              - 边界条件处理
+            </div>
+            <div class="content-actions">
+              <button class="action-btn primary">复制回答</button>
+              <button class="action-btn secondary">编辑</button>
+              <button class="action-btn secondary">收藏</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // 知识库界面交互逻辑
+    document.addEventListener('DOMContentLoaded', function () {
+      // 知识点展开/收起
+      const knowledgeItems = document.querySelectorAll('.knowledge-item')
+      knowledgeItems.forEach(item => {
+        const header = item.querySelector('.item-header')
+        header.addEventListener('click', function () {
+          item.classList.toggle('expanded')
+        })
+      })
+
+      // 分类标签切换
+      const categoryTabs = document.querySelectorAll('.category-tab')
+      categoryTabs.forEach(tab => {
+        tab.addEventListener('click', function () {
+          // 移除所有活动状态
+          categoryTabs.forEach(t => t.classList.remove('active'))
+          // 添加当前活动状态
+          this.classList.add('active')
+
+          // 模拟筛选功能
+          const category = this.textContent.trim()
+          console.log('切换到分类:', category)
+          
+          // 这里可以添加实际的筛选逻辑
+          filterKnowledgeItems(category)
+        })
+      })
+
+      // 搜索功能
+      const searchInput = document.querySelector('.search-input')
+      let searchTimeout
+      searchInput.addEventListener('input', function () {
+        clearTimeout(searchTimeout)
+        searchTimeout = setTimeout(() => {
+          const query = this.value.trim()
+          console.log('搜索:', query)
+          searchKnowledgeItems(query)
+        }, 300)
+      })
+
+      // 操作按钮
+      const actionBtns = document.querySelectorAll('.action-btn')
+      actionBtns.forEach(btn => {
+        btn.addEventListener('click', function (e) {
+          e.stopPropagation()
+          const action = this.textContent.trim()
+          console.log('执行操作:', action)
+          
+          if (action === '复制回答') {
+            // 复制内容到剪贴板
+            const content = this.closest('.item-content').querySelector('.content-text').textContent
+            navigator.clipboard.writeText(content).then(() => {
+              this.textContent = '已复制'
+              setTimeout(() => {
+                this.textContent = '复制回答'
+              }, 2000)
+            })
+          }
+        })
+      })
+
+      // 标题栏按钮
+      const titleBtns = document.querySelectorAll('.title-btn')
+      titleBtns.forEach(btn => {
+        btn.addEventListener('click', function () {
+          const title = this.getAttribute('title')
+          console.log('标题栏操作:', title)
+          
+          if (title === '添加知识点') {
+            showAddKnowledgeDialog()
+          } else if (title === '导入数据') {
+            showImportDialog()
+          } else if (title === '关闭') {
+            console.log('关闭知识库')
+          }
+        })
+      })
+
+      // 筛选知识点
+      function filterKnowledgeItems(category) {
+        const items = document.querySelectorAll('.knowledge-item')
+        
+        if (category === '全部') {
+          items.forEach(item => item.style.display = 'block')
+          return
+        }
+
+        items.forEach(item => {
+          const tags = Array.from(item.querySelectorAll('.tag')).map(tag => tag.textContent)
+          const title = item.querySelector('.item-title').textContent
+          
+          // 简单的分类匹配逻辑
+          let shouldShow = false
+          
+          switch (category) {
+            case '前端技术':
+              shouldShow = tags.some(tag => ['React', 'Vue.js', 'JavaScript', 'HTML', 'CSS'].includes(tag))
+              break
+            case '后端技术':
+              shouldShow = tags.some(tag => ['Node.js', 'Python', 'Java', 'Database'].includes(tag))
+              break
+            case '算法数据结构':
+              shouldShow = tags.includes('算法') || title.includes('算法')
+              break
+            case '网络协议':
+              shouldShow = tags.some(tag => ['HTTP', 'HTTPS', '网络协议'].includes(tag))
+              break
+            default:
+              shouldShow = true
+          }
+          
+          item.style.display = shouldShow ? 'block' : 'none'
+        })
+      }
+
+      // 搜索知识点
+      function searchKnowledgeItems(query) {
+        const items = document.querySelectorAll('.knowledge-item')
+        
+        if (!query) {
+          items.forEach(item => item.style.display = 'block')
+          return
+        }
+
+        items.forEach(item => {
+          const title = item.querySelector('.item-title').textContent.toLowerCase()
+          const preview = item.querySelector('.item-preview').textContent.toLowerCase()
+          const tags = Array.from(item.querySelectorAll('.tag')).map(tag => tag.textContent.toLowerCase())
+          
+          const searchText = query.toLowerCase()
+          const shouldShow = title.includes(searchText) || 
+                           preview.includes(searchText) || 
+                           tags.some(tag => tag.includes(searchText))
+          
+          item.style.display = shouldShow ? 'block' : 'none'
+        })
+      }
+
+      // 显示添加知识点对话框
+      function showAddKnowledgeDialog() {
+        alert('添加知识点功能（在实际应用中会打开对话框）')
+      }
+
+      // 显示导入对话框
+      function showImportDialog() {
+        alert('导入数据功能（在实际应用中会打开文件选择器）')
+      }
+    });
+  </script>
+</body>
+
+</html>
