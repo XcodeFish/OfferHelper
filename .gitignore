@@ -277,3 +277,10 @@ logs/
 *.db
 *.sqlite
 *.sqlite3
+
+# 敏感配置文件
+config/secrets.json
+*.secret
+*.key
+*secret*
+*credential*
