@@ -284,3 +284,6 @@ config/secrets.json
 *.key
 *secret*
 *credential*
+
+.env.example
+.env
