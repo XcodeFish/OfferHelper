@@ -1,4 +1,4 @@
-# AI语音助手
+# offerHelper
 
 基于Electron、智谱AI和腾讯云语音识别的桌面应用程序。
 
@@ -204,5 +204,5 @@ MIT License
 
 如有问题，请通过以下方式联系：
 
-- 邮箱: your-email@example.com
-- GitHub: https://github.com/your-username/ai-voice-assistant
+- 邮箱: <your-email@example.com>
+- GitHub: <https://github.com/your-username/ai-voice-assistant>

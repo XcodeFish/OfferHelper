@@ -25,6 +25,7 @@ const MainInterface: React.FC<MainInterfaceProps> = ({ user, onLogout, onShowSet
   const [question, setQuestion] = useState('');
   const [answer, setAnswer] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
+  const [isInterviewStarted, setIsInterviewStarted] = useState(false);
 
   const questionPlaceholder = '识别到的问题文本会显示在这里...';
   const answerPlaceholder = 'AI生成的回答内容会显示在这里...';
@@ -48,13 +49,69 @@ const MainInterface: React.FC<MainInterfaceProps> = ({ user, onLogout, onShowSet
     }
   };
 
+  // 开始面试
+  const startInterview = async () => {
+    try {
+      setIsInterviewStarted(true);
+      setVoiceState(prev => ({
+        ...prev,
+        isListening: true,
+        status: '面试进行中...'
+      }));
+
+      // 调用语音服务开始录音
+      if (window.electronAPI?.voice) {
+        const result = await window.electronAPI.voice.startRecording();
+        if (result.success) {
+          console.log('语音录制已开始');
+          // 开始模拟问题识别
+          setTimeout(() => {
+            simulateQuestionRecognition();
+          }, 2000);
+        } else {
+          console.error('启动语音录制失败:', result.message);
+        }
+      }
+    } catch (error) {
+      console.error('开始面试失败:', error);
+      setIsInterviewStarted(false);
+      setVoiceState(prev => ({
+        ...prev,
+        isListening: false,
+        status: '待机中...'
+      }));
+    }
+  };
+
+  // 结束面试
+  const stopInterview = async () => {
+    try {
+      setIsInterviewStarted(false);
+      setVoiceState(prev => ({
+        ...prev,
+        isListening: false,
+        status: '待机中...'
+      }));
+
+      // 调用语音服务停止录音
+      if (window.electronAPI?.voice) {
+        const result = await window.electronAPI.voice.stopRecording();
+        if (result.success) {
+          console.log('语音录制已停止');
+        }
+      }
+    } catch (error) {
+      console.error('结束面试失败:', error);
+    }
+  };
+
   // 切换监听状态
   const toggleListening = () => {
-    setVoiceState(prev => ({
-      ...prev,
-      isListening: !prev.isListening,
-      status: !prev.isListening ? '正在监听...' : '待机中...'
-    }));
+    if (isInterviewStarted) {
+      stopInterview();
+    } else {
+      startInterview();
+    }
   };
 
   // 模式切换
@@ -207,13 +264,9 @@ const MainInterface: React.FC<MainInterfaceProps> = ({ user, onLogout, onShowSet
     return () => document.removeEventListener('keydown', handleKeydown);
   }, []);
 
-  // 初始化模拟
+  // 初始化模拟 - 移除自动开始，等待用户点击开始面试按钮
   useEffect(() => {
-    const timer = setTimeout(() => {
-      simulateQuestionRecognition();
-    }, 3000);
-
-    return () => clearTimeout(timer);
+    // 不再自动开始面试，等待用户手动点击
   }, []);
 
   return (
@@ -250,6 +303,15 @@ const MainInterface: React.FC<MainInterfaceProps> = ({ user, onLogout, onShowSet
               ></div>
             ))}
           </div>
+        </div>
+        
+        <div className="status-right">
+          <button 
+            className={`interview-btn ${isInterviewStarted ? 'stop' : 'start'}`}
+            onClick={toggleListening}
+          >
+            {isInterviewStarted ? '结束面试' : '开始面试'}
+          </button>
         </div>
       </div>
 

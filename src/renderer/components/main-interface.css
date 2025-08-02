@@ -89,6 +89,69 @@
   gap: var(--spacing-md);
 }
 
+.status-right {
+  display: flex;
+  align-items: center;
+}
+
+/* 面试按钮 */
+.interview-btn {
+  padding: 6px 16px;
+  border: none;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+  min-width: 80px;
+  text-align: center;
+}
+
+.interview-btn.start {
+  background: linear-gradient(135deg, #4CAF50, #45a049);
+  color: white;
+  box-shadow: 0 2px 8px rgba(76, 175, 80, 0.3);
+}
+
+.interview-btn.start:hover {
+  background: linear-gradient(135deg, #45a049, #3d8b40);
+  box-shadow: 0 4px 12px rgba(76, 175, 80, 0.4);
+  transform: translateY(-1px);
+}
+
+.interview-btn.stop {
+  background: linear-gradient(135deg, #f44336, #d32f2f);
+  color: white;
+  box-shadow: 0 2px 8px rgba(244, 67, 54, 0.3);
+  animation: pulse-red 2s infinite;
+}
+
+.interview-btn.stop:hover {
+  background: linear-gradient(135deg, #d32f2f, #c62828);
+  box-shadow: 0 4px 12px rgba(244, 67, 54, 0.4);
+  transform: translateY(-1px);
+}
+
+.interview-btn:active {
+  transform: translateY(0);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
+}
+
+/* 按钮动画效果 */
+@keyframes pulse-red {
+  0% {
+    box-shadow: 0 2px 8px rgba(244, 67, 54, 0.3);
+  }
+  50% {
+    box-shadow: 0 2px 8px rgba(244, 67, 54, 0.6);
+  }
+  100% {
+    box-shadow: 0 2px 8px rgba(244, 67, 54, 0.3);
+  }
+}
+
 .mic-status {
   display: flex;
   align-items: center;
