@@ -1,0 +1,279 @@
+/* 主界面容器 */
+.main-container {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  background: var(--primary-bg);
+  border: 1px solid var(--border-color);
+}
+
+/* 标题栏 */
+.title-bar {
+  height: 30px;
+  background: var(--secondary-bg);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 var(--spacing-md);
+  border-bottom: 1px solid var(--border-color);
+  -webkit-app-region: drag;
+}
+
+.window-controls {
+  display: flex;
+  gap: var(--spacing-sm);
+  -webkit-app-region: no-drag;
+}
+
+.control-btn {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: none;
+  cursor: pointer;
+  transition: opacity var(--transition-fast);
+}
+
+.control-btn.close {
+  background: #ff5f57;
+}
+
+.control-btn.minimize {
+  background: #ffbd2e;
+}
+
+.control-btn.maximize {
+  background: #28ca42;
+}
+
+.control-btn:hover {
+  opacity: 0.8;
+}
+
+.title-bar-buttons {
+  display: flex;
+  gap: var(--spacing-sm);
+  -webkit-app-region: no-drag;
+}
+
+.title-btn {
+  padding: var(--spacing-xs) var(--spacing-sm);
+  background: transparent;
+  border: 1px solid var(--border-color);
+  color: var(--text-secondary);
+  border-radius: var(--border-radius-sm);
+  font-size: var(--font-size-xs);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.title-btn:hover {
+  background: var(--accent-color);
+  color: white;
+}
+
+/* 状态栏 */
+.status-bar {
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 var(--spacing-md);
+  background: var(--secondary-bg);
+  border-bottom: 1px solid var(--border-color);
+}
+
+.status-left {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+}
+
+.mic-status {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  font-size: var(--font-size-sm);
+}
+
+.mic-icon {
+  font-size: var(--font-size-lg);
+}
+
+.recording-indicator {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--error-color);
+  animation: pulse 1.5s infinite;
+  display: none;
+}
+
+.recording-indicator.active {
+  display: block;
+}
+
+.volume-visualizer {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  height: 20px;
+}
+
+.volume-bar {
+  width: 3px;
+  background: var(--listening-color);
+  border-radius: 2px;
+  transition: height 0.1s ease;
+  height: 4px;
+}
+
+.volume-bar.active {
+  animation: wave 0.8s infinite ease-in-out;
+}
+
+/* 问题区域 */
+.question-area {
+  height: 80px;
+  padding: var(--spacing-md);
+  background: var(--primary-bg);
+  border-bottom: 1px solid var(--border-color);
+  overflow-y: auto;
+}
+
+.question-text {
+  font-size: var(--font-size-sm);
+  color: var(--text-primary);
+  line-height: 1.4;
+  min-height: 20px;
+}
+
+.question-placeholder {
+  color: var(--text-secondary);
+  font-style: italic;
+}
+
+/* 回答区域 */
+.answer-area {
+  flex: 1;
+  padding: var(--spacing-md);
+  background: var(--primary-bg);
+  border-bottom: 1px solid var(--border-color);
+  overflow-y: auto;
+}
+
+.answer-text {
+  font-size: var(--font-size-sm);
+  color: var(--text-primary);
+  line-height: 1.5;
+  white-space: pre-wrap;
+  min-height: 20px;
+}
+
+.answer-placeholder {
+  color: var(--text-secondary);
+  font-style: italic;
+}
+
+/* 控制栏 */
+.control-bar {
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 var(--spacing-md);
+  background: var(--secondary-bg);
+  border-bottom: 1px solid var(--border-color);
+}
+
+.mode-buttons {
+  display: flex;
+  gap: var(--spacing-sm);
+}
+
+.mode-btn {
+  padding: var(--spacing-xs) var(--spacing-sm);
+  background: transparent;
+  border: 1px solid var(--border-color);
+  color: var(--text-secondary);
+  border-radius: var(--border-radius-sm);
+  font-size: var(--font-size-xs);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.mode-btn.active {
+  background: var(--accent-color);
+  color: white;
+  border-color: var(--accent-color);
+}
+
+.mode-btn:hover:not(.active) {
+  border-color: var(--accent-color);
+  color: var(--accent-color);
+}
+
+.action-buttons {
+  display: flex;
+  gap: var(--spacing-sm);
+}
+
+.action-btn {
+  padding: var(--spacing-xs) var(--spacing-sm);
+  background: transparent;
+  border: 1px solid var(--border-color);
+  color: var(--text-secondary);
+  border-radius: var(--border-radius-sm);
+  font-size: var(--font-size-xs);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.action-btn:hover {
+  background: var(--accent-color);
+  color: white;
+  border-color: var(--accent-color);
+}
+
+/* 透明度控制 */
+.opacity-control {
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 var(--spacing-md);
+  background: var(--secondary-bg);
+  gap: var(--spacing-md);
+}
+
+.opacity-label {
+  font-size: var(--font-size-xs);
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+
+.opacity-slider {
+  flex: 1;
+  height: 4px;
+  background: var(--border-color);
+  border-radius: 2px;
+  outline: none;
+  cursor: pointer;
+  -webkit-appearance: none;
+}
+
+.opacity-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 16px;
+  height: 16px;
+  background: var(--accent-color);
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+.opacity-value {
+  font-size: var(--font-size-xs);
+  color: var(--text-primary);
+  min-width: 30px;
+  text-align: right;
+}
