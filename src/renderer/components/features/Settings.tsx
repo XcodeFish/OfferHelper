@@ -3,7 +3,15 @@ import { motion } from 'framer-motion';
 import { useAppStore } from '../../store';
 import { speechService } from '../../services/SpeechService';
 import { tencentSpeechService } from '../../services/TencentSpeechService';
-import SpeechMonitor from './SpeechMonitor';
+import { testSpeechService, validateTencentConfig, cleanupSpeechService } from '../../utils/speechUtils';
+import { debugLogger } from '../../utils/debugLogger';
+import NoEventBusTest from './NoEventBusTest';
+import EventBusTest from './EventBusTest';
+import ProgressiveSpeechTest from './ProgressiveSpeechTest';
+import ImprovedSpeechMonitor from './ImprovedSpeechMonitor';
+import TimingAnalysisTest from './TimingAnalysisTest';
+import UltimateSpeechDebugger from './UltimateSpeechDebugger';
+import SafeSpeechTest from './SafeSpeechTest';
 
 // 检测是否在 Electron 环境中运行
 const isElectron = typeof window !== 'undefined' && window.electron;
@@ -14,6 +22,14 @@ interface SettingsProps {
 
 const Settings: React.FC<SettingsProps> = ({ onBack }) => {
   const { ui, privacy, setTheme, setAutoHideEnabled } = useAppStore();
+  
+  // 记录组件挂载
+  useEffect(() => {
+    debugLogger.trackComponentLifecycle('Settings', 'mounted');
+    return () => {
+      debugLogger.trackComponentLifecycle('Settings', 'unmounting');
+    };
+  }, []);
   
   // 本地状态
   const [apiKey, setApiKey] = useState('');
@@ -35,7 +51,13 @@ const Settings: React.FC<SettingsProps> = ({ onBack }) => {
   const [speechEngine, setSpeechEngine] = useState('16k_zh');
   const [voiceFormat, setVoiceFormat] = useState('pcm');
   const [speechProvider, setSpeechProvider] = useState('tencent'); // 'tencent' 或 'browser'
-  const [showSpeechMonitor, setShowSpeechMonitor] = useState(false);
+  const [showNoEventBusTest, setShowNoEventBusTest] = useState(false);
+  const [showEventBusTest, setShowEventBusTest] = useState(false);
+  const [showProgressiveTest, setShowProgressiveTest] = useState(false);
+  const [showImprovedMonitor, setShowImprovedMonitor] = useState(false);
+  const [showTimingAnalysis, setShowTimingAnalysis] = useState(false);
+  const [showUltimateDebugger, setShowUltimateDebugger] = useState(false);
+  const [showSafeSpeechTest, setShowSafeSpeechTest] = useState(false);
 
   // 从本地存储加载设置
   useEffect(() => {
@@ -366,65 +388,73 @@ const Settings: React.FC<SettingsProps> = ({ onBack }) => {
             🎤 语音识别配置
           </h3>
           <div className="space-y-4">
-            <div className="flex justify-end">
+            <div className="flex justify-end gap-2">
               <button
-                onClick={async () => {
-                  if (speechProvider === 'tencent' && (!tencentSecretId || !tencentSecretKey || !tencentAppId)) {
-                    alert('请先完整配置腾讯云 SecretId、SecretKey 和 AppId 后再进行测试');
-                    return;
-                  }
-                  
-                  // 在打开测试窗口前，确保语音服务已正确初始化
-                  try {
-                    if (speechProvider === 'tencent') {
-                      const voiceFormatMap: Record<string, number> = {
-                        'pcm': 1,
-                        'wav': 12,
-                        'mp3': 8,
-                        'flac': 12
-                      };
-                      
-                      console.log('测试前初始化腾讯云语音识别服务...');
-                      await tencentSpeechService.initialize({
-                        secretId: tencentSecretId,
-                        secretKey: tencentSecretKey,
-                        appId: tencentAppId,
-                        region: tencentRegion,
-                        engineType: speechEngine,
-                        voiceFormat: voiceFormatMap[voiceFormat] || 1,
-                        needVad: 1,
-                        hotwordId: '',
-                        filterDirty: 0,
-                        filterModal: 0,
-                        filterPunc: 0,
-                        convertNumMode: 1,
-                        filterEmptyResult: 1,
-                        vadSilenceTime: 1000
-                      });
-                      
-                      speechService.setProvider('tencent');
-                      console.log('腾讯云语音识别服务初始化成功，准备测试');
-                    } else {
-                      speechService.setProvider('browser');
-                      console.log('浏览器语音识别服务准备就绪');
-                    }
-                    
-                    setShowSpeechMonitor(true);
-                  } catch (error) {
-                    console.error('初始化语音识别服务失败:', error);
-                    alert('初始化语音识别服务失败: ' + (error instanceof Error ? error.message : '未知错误'));
-                  }
+                onClick={() => {
+                  console.log('🎤 启动实时语音测试');
+                  setShowSafeSpeechTest(true);
                 }}
-                className={`px-3 py-1 text-white rounded-lg text-sm transition-colors flex items-center gap-1 ${
-                  speechProvider === 'tencent' && (!tencentSecretId || !tencentSecretKey || !tencentAppId)
-                    ? 'bg-gray-600 cursor-not-allowed opacity-50'
-                    : 'bg-blue-600 hover:bg-blue-700'
-                }`}
-                disabled={speechProvider === 'tencent' && (!tencentSecretId || !tencentSecretKey || !tencentAppId)}
+                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm transition-colors flex items-center gap-2 font-medium"
               >
-                <span>🎤</span> 测试语音识别
+                <span>🎤</span> 实时语音测试
               </button>
             </div>
+            
+            {/* 调试测试按钮（可折叠） */}
+            <details className="mt-2">
+              <summary className="text-gray-400 text-xs cursor-pointer hover:text-gray-300">
+                🔧 高级调试工具 (开发用)
+              </summary>
+              <div className="flex justify-end gap-1 mt-2 flex-wrap">
+                <button
+                  onClick={() => {
+                    console.log('🎤 启动改进版语音测试');
+                    setShowImprovedMonitor(true);
+                  }}
+                  className="px-2 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded text-xs transition-colors"
+                >
+                  🎤 改进版
+                </button>
+                
+                <button
+                  onClick={() => {
+                    console.log('🔬 启动终极调试器');
+                    setShowUltimateDebugger(true);
+                  }}
+                  className="px-2 py-1 bg-red-600 hover:bg-red-700 text-white rounded text-xs transition-colors"
+                >
+                  🔬 终极调试
+                </button>
+                
+                <button
+                  onClick={() => setShowTimingAnalysis(true)}
+                  className="px-2 py-1 bg-purple-600 hover:bg-purple-700 text-white rounded text-xs transition-colors"
+                >
+                  ⏱️ 时序分析
+                </button>
+                
+                <button
+                  onClick={() => setShowNoEventBusTest(true)}
+                  className="px-2 py-1 bg-green-600 hover:bg-green-700 text-white rounded text-xs transition-colors"
+                >
+                  🧪 基础
+                </button>
+                
+                <button
+                  onClick={() => setShowEventBusTest(true)}
+                  className="px-2 py-1 bg-yellow-600 hover:bg-yellow-700 text-white rounded text-xs transition-colors"
+                >
+                  ⚡ EventBus
+                </button>
+                
+                <button
+                  onClick={() => setShowProgressiveTest(true)}
+                  className="px-2 py-1 bg-orange-600 hover:bg-orange-700 text-white rounded text-xs transition-colors"
+                >
+                  🔍 渐进式
+                </button>
+              </div>
+            </details>
             <div className="flex items-center justify-between">
               <label className="text-gray-300">语音识别服务</label>
               <select
@@ -701,29 +731,62 @@ const Settings: React.FC<SettingsProps> = ({ onBack }) => {
         </div>
       </div>
 
-      {/* 语音识别测试弹窗 */}
-      {showSpeechMonitor && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-gray-800 border border-gray-600 rounded-xl p-6 max-w-md w-full mx-4">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-white">语音识别测试</h3>
-              <button
-                onClick={() => setShowSpeechMonitor(false)}
-                className="p-2 hover:bg-white/10 rounded-lg transition-colors"
-              >
-                <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
-            <SpeechMonitor 
-              visible={true}
-              onClose={() => setShowSpeechMonitor(false)}
-              provider={speechProvider as 'browser' | 'tencent'}
-            />
-          </div>
-        </div>
-      )}
+      {/* 无EventBus测试弹窗 */}
+        {showNoEventBusTest && (
+          <NoEventBusTest
+            visible={showNoEventBusTest}
+            onClose={() => setShowNoEventBusTest(false)}
+          />
+        )}
+        
+      {/* EventBus测试弹窗 */}
+        {showEventBusTest && (
+          <EventBusTest
+            visible={showEventBusTest}
+            onClose={() => setShowEventBusTest(false)}
+          />
+        )}
+        
+      {/* 渐进式测试弹窗 */}
+        {showProgressiveTest && (
+          <ProgressiveSpeechTest
+            visible={showProgressiveTest}
+            onClose={() => setShowProgressiveTest(false)}
+          />
+        )}
+        
+      {/* 改进版语音测试弹窗 */}
+        {showImprovedMonitor && (
+          <ImprovedSpeechMonitor
+            visible={showImprovedMonitor}
+            onClose={() => setShowImprovedMonitor(false)}
+            provider={speechProvider as 'browser' | 'tencent'}
+          />
+        )}
+        
+      {/* 时序分析测试弹窗 */}
+        {showTimingAnalysis && (
+          <TimingAnalysisTest
+            visible={showTimingAnalysis}
+            onClose={() => setShowTimingAnalysis(false)}
+          />
+        )}
+        
+      {/* 终极调试器弹窗 */}
+        {showUltimateDebugger && (
+          <UltimateSpeechDebugger
+            visible={showUltimateDebugger}
+            onClose={() => setShowUltimateDebugger(false)}
+          />
+        )}
+        
+      {/* 安全版语音测试弹窗 */}
+        {showSafeSpeechTest && (
+          <SafeSpeechTest
+            visible={showSafeSpeechTest}
+            onClose={() => setShowSafeSpeechTest(false)}
+          />
+        )}
     </motion.div>
   );
 };

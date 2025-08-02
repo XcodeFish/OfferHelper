@@ -26,6 +26,16 @@ export interface ElectronAPI {
     stop: () => Promise<void>;
   };
 
+  // 腾讯语音识别
+  tencentSpeech: {
+    initialize: (config: any) => Promise<{ success: boolean; error?: string }>;
+    start: () => Promise<{ success: boolean; error?: string }>;
+    stop: () => Promise<{ success: boolean; error?: string }>;
+    sendAudio: (audioData: ArrayBuffer) => Promise<{ success: boolean; error?: string }>;
+    onResult: (callback: (result: any) => void) => void;
+    onError: (callback: (error: any) => void) => void;
+  };
+
   // AI分析
   ai: {
     analyze: (question: string) => Promise<any>;

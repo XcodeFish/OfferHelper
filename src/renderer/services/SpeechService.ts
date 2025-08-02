@@ -1,4 +1,6 @@
 import { tencentSpeechService } from './TencentSpeechService';
+import { tencentSpeechServiceSafe } from './TencentSpeechServiceSafe';
+import { EventBus } from '../../shared/utils/EventBus';
 
 // 简单的日志工具
 const logger = {
@@ -6,32 +8,6 @@ const logger = {
   warn: (message: string, ...args: any[]) => console.warn(`[WARN] ${message}`, ...args),
   error: (message: string, ...args: any[]) => console.error(`[ERROR] ${message}`, ...args)
 };
-
-// 简单的事件总线
-class SimpleEventBus {
-  private listeners: { [key: string]: Function[] } = {};
-
-  emit(event: string, data?: any) {
-    if (this.listeners[event]) {
-      this.listeners[event].forEach(callback => callback(data));
-    }
-  }
-
-  on(event: string, callback: Function) {
-    if (!this.listeners[event]) {
-      this.listeners[event] = [];
-    }
-    this.listeners[event].push(callback);
-  }
-
-  off(event: string, callback: Function) {
-    if (this.listeners[event]) {
-      this.listeners[event] = this.listeners[event].filter(cb => cb !== callback);
-    }
-  }
-}
-
-const EventBus = new SimpleEventBus();
 
 // 类型定义
 interface SpeechConfig {
@@ -70,6 +46,7 @@ export class SpeechService {
   private isListening: boolean = false;
   private config: SpeechConfig;
   private speechProvider: 'browser' | 'tencent' = 'browser';
+  private tencentConfig: any = null;
 
   constructor() {
     this.config = {
@@ -177,56 +154,90 @@ export class SpeechService {
    * 开始语音识别
    */
   public startListening(): Promise<void> {
-    // 如果使用腾讯云语音识别
-    if (this.speechProvider === 'tencent') {
-      console.log('SpeechService: 使用腾讯云语音识别');
-      // 需要传入配置参数
-      const defaultConfig = {
-        secretId: '',
-        secretKey: '',
-        appId: '',
-        region: 'ap-beijing',
-        engineType: '16k_zh',
-        voiceFormat: 1,
-        needVad: 1,
-        hotwordId: '',
-        filterDirty: 0,
-        filterModal: 0,
-        filterPunc: 0,
-        convertNumMode: 1,
-        filterEmptyResult: 0,
-        vadSilenceTime: 1000
-      };
-      return tencentSpeechService.startListening(defaultConfig).then(() => {
-        this.isListening = true;
-        console.log('SpeechService: 腾讯云语音识别已启动');
-      }).catch(error => {
-        this.isListening = false;
-        console.error('SpeechService: 腾讯云语音识别启动失败:', error);
-        throw error;
-      });
-    }
-    
-    // 使用浏览器内置语音识别
-    return new Promise((resolve, reject) => {
-      if (!this.recognition) {
-        const error = new Error('浏览器语音识别不可用');
-        logger.error(error.message);
-        reject(error);
-        return;
-      }
-
-      if (this.isListening) {
-        logger.warn('语音识别已在进行中');
-        resolve();
-        return;
-      }
-
+    return new Promise(async (resolve, reject) => {
       try {
-        this.recognition.start();
-        resolve();
+        logger.info(`SpeechService: 开始语音识别，提供商: ${this.speechProvider}`);
+        
+        // 如果使用腾讯云语音识别
+        if (this.speechProvider === 'tencent') {
+          logger.info('SpeechService: 使用腾讯云语音识别');
+          
+          // 检查腾讯云服务是否可用
+          if (!tencentSpeechServiceSafe) {
+            const error = new Error('腾讯云语音识别服务不可用');
+            logger.error('SpeechService:', error.message);
+            EventBus.emit('speech:error', { error: 'service-unavailable', message: error.message });
+            reject(error);
+            return;
+          }
+          
+          // 检查腾讯云配置
+          if (!this.tencentConfig) {
+            const error = new Error('腾讯云语音识别配置缺失，请先在设置中配置相关参数');
+            logger.error('SpeechService:', error.message);
+            EventBus.emit('speech:error', { error: 'config-missing', message: error.message });
+            reject(error);
+            return;
+          }
+          
+          try {
+            logger.info('SpeechService: 启动安全版腾讯云语音识别服务...');
+            await tencentSpeechServiceSafe.startListening(this.tencentConfig);
+            this.isListening = true;
+            logger.info('SpeechService: 腾讯云语音识别已启动');
+            
+            // 使用更安全的异步事件发射
+            try {
+              EventBus.emit('speech:started');
+              logger.info('SpeechService: speech:started事件已发射');
+            } catch (eventError) {
+              logger.error('SpeechService: 发射speech:started事件失败:', eventError);
+            }
+            
+            resolve();
+          } catch (tencentError) {
+            this.isListening = false;
+            const errorMessage = tencentError instanceof Error ? tencentError.message : '腾讯云语音识别启动失败';
+            logger.error('SpeechService: 腾讯云语音识别启动失败:', tencentError);
+            EventBus.emit('speech:error', { error: 'tencent-start-failed', message: errorMessage });
+            reject(new Error(errorMessage));
+          }
+          return;
+        }
+        
+        // 使用浏览器内置语音识别
+        if (!this.recognition) {
+          const error = new Error('浏览器语音识别不可用，请使用支持Web Speech API的现代浏览器');
+          logger.error(error.message);
+          reject(error);
+          return;
+        }
+
+        if (this.isListening) {
+          logger.warn('语音识别已在进行中');
+          resolve();
+          return;
+        }
+
+        // 检查麦克风权限
+        try {
+          await navigator.mediaDevices.getUserMedia({ audio: true });
+        } catch (permissionError) {
+          logger.error('麦克风权限检查失败:', permissionError);
+          reject(new Error('无法访问麦克风，请检查浏览器权限设置'));
+          return;
+        }
+
+        try {
+          this.recognition.start();
+          resolve();
+        } catch (startError) {
+          logger.error('启动浏览器语音识别失败:', startError);
+          reject(new Error('启动语音识别失败: ' + (startError instanceof Error ? startError.message : '未知错误')));
+        }
       } catch (error) {
-        logger.error('启动语音识别失败:', error);
+        logger.error('语音识别启动过程中出现未预期的错误:', error);
+        this.isListening = false;
         reject(error);
       }
     });
@@ -238,8 +249,8 @@ export class SpeechService {
   public stopListening(): void {
     // 如果使用腾讯云语音识别
     if (this.speechProvider === 'tencent') {
-      console.log('SpeechService: 停止腾讯云语音识别');
-      tencentSpeechService.stopListening();
+      console.log('SpeechService: 停止安全版腾讯云语音识别');
+      tencentSpeechServiceSafe.stopListening();
       this.isListening = false;
       return;
     }
@@ -300,8 +311,8 @@ export class SpeechService {
   } {
     // 如果使用腾讯云语音识别
     if (this.speechProvider === 'tencent') {
-      // 使用腾讯云语音识别的状态
-      const isRecording = tencentSpeechService.isRecording();
+      // 使用安全版腾讯云语音识别的状态
+      const isRecording = tencentSpeechServiceSafe.isRecording();
       this.isListening = isRecording;
       return {
         isListening: isRecording,
@@ -331,7 +342,8 @@ export class SpeechService {
       'network': '网络连接错误',
       'service-not-allowed': '语音识别服务不可用',
       'bad-grammar': '语法错误',
-      'language-not-supported': '不支持的语言'
+      'language-not-supported': '不支持的语言',
+      'aborted': '语音识别被中断'
     };
 
     return errorMessages[error] || `未知错误: ${error}`;
@@ -349,7 +361,7 @@ export class SpeechService {
     
     // 停止腾讯云语音识别服务
     if (this.speechProvider === 'tencent') {
-      tencentSpeechService.stopListening();
+      tencentSpeechServiceSafe.stopListening();
     }
     
     logger.info('语音识别服务已销毁');
@@ -359,7 +371,16 @@ export class SpeechService {
    * 初始化腾讯云语音识别
    */
   public initializeTencentSpeech(config: any): Promise<void> {
-    return tencentSpeechService.initialize(config);
+    this.tencentConfig = config;
+    return tencentSpeechServiceSafe.initialize(config);
+  }
+
+  /**
+   * 设置腾讯云配置
+   */
+  public setTencentConfig(config: any): void {
+    this.tencentConfig = config;
+    logger.info('SpeechService: 腾讯云配置已更新');
   }
 }
 

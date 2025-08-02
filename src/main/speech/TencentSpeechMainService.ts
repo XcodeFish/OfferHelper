@@ -17,10 +17,18 @@ export class TencentSpeechMainService extends EventEmitter {
   private mainWindow: BrowserWindow | null = null;
   private heartbeatTimer: NodeJS.Timeout | null = null;
   private lastAudioTime: number = 0;
+  private lastSendTime: number = 0; // 添加发送频率控制
 
   constructor() {
     super();
+    console.log('🔥 [主进程] TencentSpeechMainService构造函数开始执行');
+    logger.info('[主进程] TencentSpeechMainService构造函数被调用');
+    
+    console.log('🔥 [主进程] 准备调用setupIpcHandlers');
     this.setupIpcHandlers();
+    
+    console.log('🔥 [主进程] TencentSpeechMainService构造函数完成');
+    logger.info('[主进程] TencentSpeechMainService初始化完成');
   }
 
   /**
@@ -34,6 +42,8 @@ export class TencentSpeechMainService extends EventEmitter {
    * 设置IPC处理器
    */
   private setupIpcHandlers(): void {
+    logger.info('[主进程] 开始注册IPC处理器');
+    console.log('[主进程] 开始注册IPC处理器');
     // 初始化腾讯云语音识别
     ipcMain.handle('tencent-speech:initialize', async (event, config: TencentSpeechConfig) => {
       try {
@@ -76,16 +86,48 @@ export class TencentSpeechMainService extends EventEmitter {
       }
     });
 
-    // 发送音频数据
-    ipcMain.handle('tencent-speech:send-audio', (event, audioData: ArrayBuffer) => {
+    // 发送音频数据 - 带调试日志的防崩溃保护
+    ipcMain.handle('tencent-speech:send-audio', (event, audioData: Uint8Array | ArrayBuffer) => {
+      console.log(`[主进程] 收到IPC音频数据请求, 类型: ${audioData ? audioData.constructor.name : 'null'}, 长度: ${audioData ? (audioData as any).length || (audioData as any).byteLength : 'null'}`);
+      
       try {
-        this.sendAudioData(audioData);
-        return { success: true };
+        if (!audioData) {
+          console.log(`[主进程] 音频数据为空，返回成功`);
+          return { success: true };
+        }
+        
+        // 将 Uint8Array 转换为 ArrayBuffer
+        let arrayBuffer: ArrayBuffer;
+        if (audioData instanceof Uint8Array) {
+          console.log(`[主进程] 将Uint8Array转换为ArrayBuffer: ${audioData.length} 字节`);
+          arrayBuffer = audioData.buffer.slice(audioData.byteOffset, audioData.byteOffset + audioData.byteLength);
+        } else if (audioData instanceof ArrayBuffer) {
+          console.log(`[主进程] 直接使用ArrayBuffer: ${audioData.byteLength} 字节`);
+          arrayBuffer = audioData;
+        } else {
+          console.log(`[主进程] 未知数据类型: ${typeof audioData}`);
+          return { success: false, error: '未知的音频数据类型' };
+        }
+        
+        console.log(`[主进程] 准备处理音频数据: ${arrayBuffer.byteLength} 字节`);
+        
+        // 同步调用，但加强错误处理
+        try {
+          this.sendAudioData(arrayBuffer);
+          console.log(`[主进程] 音频数据处理完成`);
+          return { success: true };
+        } catch (sendError) {
+          console.log(`[主进程] sendAudioData出错:`, sendError);
+          logger.error(`[主进程] sendAudioData失败:`, sendError);
+          return { success: false, error: sendError instanceof Error ? sendError.message : '音频数据处理失败' };
+        }
+        
       } catch (error) {
-        logger.error('发送音频数据失败:', error);
+        console.log(`[主进程] IPC处理出错:`, error);
+        logger.error(`[主进程] IPC音频数据处理失败:`, error);
         return { 
           success: false, 
-          error: error instanceof Error ? error.message : '发送失败' 
+          error: error instanceof Error ? error.message : '音频数据处理失败'
         };
       }
     });
@@ -108,41 +150,63 @@ export class TencentSpeechMainService extends EventEmitter {
       try {
         // 检查主窗口是否存在且未销毁
         if (!this.mainWindow || this.mainWindow.isDestroyed()) {
+          logger.debug('主窗口不存在或已销毁，跳过消息发送');
           return;
         }
 
         const webContents = this.mainWindow.webContents;
         if (!webContents || webContents.isDestroyed()) {
+          logger.debug('webContents不存在或已销毁，跳过消息发送');
           return;
         }
 
         // 检查渲染进程是否准备就绪
         if (webContents.isLoading() || webContents.isCrashed()) {
+          logger.debug('渲染进程未准备就绪，跳过消息发送');
           return;
         }
 
-        // 检查是否有有效的渲染帧
+        // 使用更安全的方式发送消息
         try {
-          const url = webContents.getURL();
-          if (!url || url === 'about:blank' || url === '') {
-            return;
+          // 优先使用 webContents.send 方法
+          webContents.send(channel, data);
+          logger.debug(`消息已发送到渲染进程: ${channel}`);
+        } catch (sendError) {
+          logger.warn(`使用send方法发送消息失败，尝试备用方案: ${sendError}`);
+          
+          // 备用方案：使用自定义事件
+          try {
+            webContents.executeJavaScript(`
+              try {
+                const event = new CustomEvent('${channel}', { detail: ${JSON.stringify(data)} });
+                document.dispatchEvent(event);
+              } catch (e) {
+                console.warn('发送自定义事件失败:', e);
+              }
+            `).catch((execError) => {
+              logger.warn(`executeJavaScript也失败: ${execError}`);
+            });
+          } catch (execError) {
+            logger.warn(`备用方案也失败: ${execError}`);
           }
-        } catch {
-          return;
         }
 
-        // 使用 executeJavaScript 替代 send，更安全
-        webContents.executeJavaScript(`
-          if (window.electron && window.electron.ipcRenderer) {
-            window.electron.ipcRenderer.emit('${channel}', ${JSON.stringify(data)});
-          }
-        `).catch(() => {
-          // 静默忽略执行失败
-        });
-
-      } catch {
-        // 静默忽略所有错误
+      } catch (error) {
+        logger.error('发送消息到渲染进程时出现未预期错误:', error);
       }
+    });
+    
+    logger.info('[主进程] 所有IPC处理器注册完成');
+    console.log('[主进程] 所有IPC处理器注册完成');
+    
+    // 验证IPC处理器是否确实注册了
+    console.log('[主进程] 验证IPC处理器注册状态...');
+    console.log('[主进程] tencent-speech:send-audio 处理器已注册:', typeof ipcMain.listeners('tencent-speech:send-audio'));
+    
+    // 添加一个测试IPC处理器
+    ipcMain.handle('tencent-speech:test', () => {
+      console.log('[主进程] 测试IPC处理器被调用');
+      return { success: true, message: '测试成功' };
     });
   }
 
@@ -150,7 +214,9 @@ export class TencentSpeechMainService extends EventEmitter {
    * 开始语音识别
    */
   private async startListening(): Promise<void> {
+    logger.info('[主进程] startListening被调用');
     if (!this.config) {
+      logger.error('[主进程] 配置未初始化，抛出异常');
       throw new Error('腾讯云语音识别未初始化');
     }
 
@@ -222,53 +288,130 @@ export class TencentSpeechMainService extends EventEmitter {
     }
 
     try {
+      // 清理之前的连接
+      if (this.websocket) {
+        this.websocket.removeAllListeners();
+        if (this.websocket.readyState === WebSocket.OPEN || this.websocket.readyState === WebSocket.CONNECTING) {
+          this.websocket.close();
+        }
+        this.websocket = null;
+      }
+
       // 生成签名URL
       const url = this.generateSignedUrl();
+      logger.info('创建WebSocket连接到腾讯云...');
       
-      // 创建WebSocket连接
-      this.websocket = new WebSocket(url);
+      // 创建WebSocket连接 - 添加保护措施
+      try {
+        this.websocket = new WebSocket(url);
+        logger.info('WebSocket实例创建成功');
+      } catch (wsCreateError) {
+        logger.error('WebSocket实例创建失败:', wsCreateError);
+        throw new Error('无法创建WebSocket连接: ' + (wsCreateError instanceof Error ? wsCreateError.message : '未知错误'));
+      }
+      
+      // 设置连接超时
+      const connectionTimeout = setTimeout(() => {
+        if (this.websocket && this.websocket.readyState === WebSocket.CONNECTING) {
+          logger.error('WebSocket连接超时');
+          this.websocket.close();
+        }
+      }, 15000); // 15秒超时
       
       // 设置WebSocket事件处理
       this.websocket.on('open', () => {
+        clearTimeout(connectionTimeout);
         this.isConnected = true;
-        logger.info('腾讯云WebSocket连接已建立');
+        logger.info('✅ 腾讯云WebSocket连接已建立');
+        this.sendToRenderer('speech:connected', { voiceId: this.voiceId });
       });
       
       this.websocket.on('message', (data: Buffer) => {
         try {
           const response = JSON.parse(data.toString());
+          logger.debug('收到WebSocket消息:', response);
           this.handleWebSocketMessage(response);
         } catch (error) {
           logger.error('解析WebSocket消息失败:', error);
+          this.sendToRenderer('speech:error', {
+            error: 'message_parse_error',
+            message: '解析服务器响应失败'
+          });
         }
       });
       
       this.websocket.on('error', (error: Error) => {
-        logger.error('WebSocket错误:', error);
+        clearTimeout(connectionTimeout);
+        this.isConnected = false;
+        logger.error('WebSocket连接错误:', error);
+        
+        let errorMessage = 'WebSocket连接错误';
+        if (error.message.includes('ENOTFOUND')) {
+          errorMessage = '无法连接到腾讯云服务器，请检查网络连接';
+        } else if (error.message.includes('ECONNREFUSED')) {
+          errorMessage = '腾讯云服务器拒绝连接，请稍后重试';
+        } else if (error.message.includes('timeout')) {
+          errorMessage = '连接腾讯云服务器超时，请检查网络状况';
+        } else {
+          errorMessage = `WebSocket连接错误: ${error.message}`;
+        }
+        
         this.sendToRenderer('speech:error', {
           error: 'websocket_error',
-          message: '腾讯云WebSocket连接错误: ' + (error instanceof Error ? error.message : String(error))
+          message: errorMessage
         });
       });
       
       this.websocket.on('close', (code: number, reason: string) => {
+        clearTimeout(connectionTimeout);
         this.isConnected = false;
-        logger.info(`WebSocket连接已关闭: ${code} ${reason}`);
-        this.sendToRenderer('speech:ended', {});
+        
+        let closeMessage = `WebSocket连接已关闭 (${code})`;
+        if (reason) {
+          closeMessage += `: ${reason}`;
+        }
+        
+        // 根据关闭代码提供更友好的信息
+        if (code === 1000) {
+          logger.info('WebSocket正常关闭');
+        } else if (code === 1006) {
+          logger.warn('WebSocket异常关闭，可能是网络问题');
+          closeMessage = '网络连接异常断开，请检查网络状况';
+        } else if (code >= 4000 && code < 5000) {
+          logger.error(`腾讯云服务错误: ${code}`);
+          closeMessage = `腾讯云服务错误 (${code})，请检查配置参数`;
+        } else {
+          logger.warn(closeMessage);
+        }
+        
+        this.sendToRenderer('speech:ended', { message: closeMessage });
+      });
+      
+      this.websocket.on('ping', () => {
+        logger.debug('收到WebSocket ping');
+      });
+      
+      this.websocket.on('pong', () => {
+        logger.debug('收到WebSocket pong');
       });
       
       // 等待连接建立
       return new Promise((resolve, reject) => {
-        const timeout = setTimeout(() => {
-          reject(new Error('WebSocket连接超时'));
-        }, 10000);
+        if (!this.websocket) {
+          reject(new Error('WebSocket实例创建失败'));
+          return;
+        }
         
-        this.websocket!.on('open', () => {
+        const timeout = setTimeout(() => {
+          reject(new Error('WebSocket连接超时，请检查网络连接和配置参数'));
+        }, 15000);
+        
+        this.websocket.once('open', () => {
           clearTimeout(timeout);
           resolve();
         });
         
-        this.websocket!.on('error', (error: Error) => {
+        this.websocket.once('error', (error: Error) => {
           clearTimeout(timeout);
           reject(error);
         });
@@ -323,6 +466,11 @@ export class TencentSpeechMainService extends EventEmitter {
       signText += sortedParams.map(([key, value]) => `${key}=${value}`).join('&');
       
       logger.debug('签名原文:', signText);
+      console.log(`[主进程] 关键参数验证:`);
+      console.log(`- voice_format: ${this.config.voiceFormat} (1=PCM)`);
+      console.log(`- engine_model_type: ${this.config.engineType}`);
+      console.log(`- voice_id: ${this.voiceId}`);
+      console.log(`- 参数总数: ${params.size}`);
       
       // 使用HMAC-SHA1算法和SecretKey对签名原文进行签名
       const hmac = crypto.createHmac('sha1', this.config.secretKey);
@@ -401,98 +549,80 @@ export class TencentSpeechMainService extends EventEmitter {
   }
 
   /**
-   * 发送音频数据
+   * 发送音频数据 - 带调试信息的防崩溃保护
    */
   private sendAudioData(audioData: ArrayBuffer): void {
-    console.log(`[主进程] 收到音频数据: ${audioData.byteLength} 字节`);
+    console.log(`[主进程] sendAudioData开始, 数据长度: ${audioData ? audioData.byteLength : 'null'}`);
     
-    if (!this.websocket || this.websocket.readyState !== WebSocket.OPEN) {
-      console.log(`[主进程] WebSocket连接状态异常: ${this.websocket ? this.websocket.readyState : 'null'}`);
-      logger.warn('WebSocket连接未建立，跳过音频数据发送');
-      return;
-    }
-
-    if (!this.config) {
-      console.log('[主进程] 配置未初始化');
-      logger.error('配置未初始化，无法发送音频数据');
-      return;
-    }
-
     try {
-      // 验证音频数据
-      if (!audioData || audioData.byteLength === 0) {
-        console.log('[主进程] 收到空音频数据，跳过发送');
-        logger.debug('跳过空音频数据');
+      if (!audioData) {
+        console.log(`[主进程] 音频数据为空，退出`);
         return;
       }
 
-      // 验证音频格式与配置是否匹配
-      const expectedFormat = this.config.voiceFormat;
-      console.log(`[主进程] 音频格式配置: ${expectedFormat}, 数据长度: ${audioData.byteLength}`);
+      // 按腾讯云要求控制发送频率（40ms间隔，保持1:1实时率）
+      const now = Date.now();
+      if (now - this.lastSendTime < 35) { // 稍微宽松一点，允许35ms间隔
+        console.log(`[主进程] 发送过于频繁，跳过 (${now - this.lastSendTime}ms < 35ms)`);
+        return;
+      }
+      this.lastSendTime = now;
+
+      // 检查WebSocket连接状态
+      if (!this.websocket) {
+        console.log(`[主进程] WebSocket为null`);
+        return;
+      }
       
-      // 对于PCM格式，验证数据长度必须是偶数字节（16位PCM要求）
+      if (this.websocket.readyState !== WebSocket.OPEN) {
+        console.log(`[主进程] WebSocket状态不是OPEN: ${this.websocket.readyState}`);
+        return;
+      }
+
+      if (!this.config) {
+        console.log(`[主进程] 配置为空`);
+        return;
+      }
+
+      // 验证音频数据基本要求
+      if (audioData.byteLength === 0) {
+        console.log(`[主进程] 音频数据长度为0`);
+        return;
+      }
+
+      // 对于PCM格式，验证数据长度必须是偶数字节
+      const expectedFormat = this.config.voiceFormat || 1;
       if (expectedFormat === 1 && audioData.byteLength % 2 !== 0) {
-        console.log(`[主进程] PCM音频数据字节数不是偶数: ${audioData.byteLength}`);
-        logger.error(`PCM音频数据字节数不是偶数: ${audioData.byteLength}，数据格式错误`);
-        return; // 直接丢弃格式错误的数据
+        console.log(`[主进程] PCM数据长度不是偶数: ${audioData.byteLength}`);
+        return;
       }
       
-      // 腾讯云要求每次发送1280字节 (640个16位样本，40ms音频)
-      const EXPECTED_CHUNK_SIZE = 1280;
-      if (expectedFormat === 1 && audioData.byteLength !== EXPECTED_CHUNK_SIZE) {
-        console.log(`[主进程] 音频数据长度不匹配: 实际=${audioData.byteLength}, 期望=${EXPECTED_CHUNK_SIZE}`);
-        logger.warn(`音频数据长度: ${audioData.byteLength} 字节，期望: ${EXPECTED_CHUNK_SIZE} 字节`);
-        
-        // 如果数据过小，跳过这次发送
-        if (audioData.byteLength < EXPECTED_CHUNK_SIZE) {
-          console.log('[主进程] 音频数据过小，跳过发送');
-          logger.debug('音频数据过小，跳过发送');
-          return;
-        }
-        
-        // 如果数据过大，截取前1280字节
-        if (audioData.byteLength > EXPECTED_CHUNK_SIZE) {
-          console.log('[主进程] 音频数据过大，截取前1280字节');
-          logger.debug('音频数据过大，截取前1280字节');
-          audioData = audioData.slice(0, EXPECTED_CHUNK_SIZE);
-        }
+      // 检查数据大小范围
+      const MIN_CHUNK_SIZE = 320;
+      if (audioData.byteLength < MIN_CHUNK_SIZE) {
+        console.log(`[主进程] 数据过小: ${audioData.byteLength} < ${MIN_CHUNK_SIZE}`);
+        return;
       }
 
-      // 检查音频数据内容（用于调试）
-      const dataView = new DataView(audioData);
-      let nonZeroCount = 0;
-      let maxValue = 0;
-      for (let i = 0; i < Math.min(audioData.byteLength, 100); i += 2) {
-        const sample = Math.abs(dataView.getInt16(i, true));
-        if (sample > 0) nonZeroCount++;
-        maxValue = Math.max(maxValue, sample);
-      }
-      console.log(`[主进程] 音频数据分析: 非零样本=${nonZeroCount}/50, 最大值=${maxValue}`);
+      console.log(`[主进程] 准备发送到腾讯云: ${audioData.byteLength} 字节`);
 
-      // 创建Buffer并发送到腾讯云
+      // 创建Buffer并发送
       const buffer = Buffer.from(audioData);
+      console.log(`[主进程] Buffer创建成功: ${buffer.length} 字节`);
       
-      // 确保WebSocket仍然处于开放状态
-      if (this.websocket.readyState === WebSocket.OPEN) {
-        console.log(`[主进程] 准备发送音频数据到腾讯云: ${buffer.length} 字节`);
+      // 直接发送，不使用异步
+      try {
         this.websocket.send(buffer);
-        console.log(`[主进程] ✅ 音频数据已成功发送到腾讯云: ${buffer.length} 字节`);
-        logger.debug(`音频数据已发送到腾讯云: ${buffer.length} 字节`);
-        
-        // 更新最后接收音频数据的时间
+        console.log(`[主进程] ✅ WebSocket发送成功: ${buffer.length} 字节`);
         this.lastAudioTime = Date.now();
-      } else {
-        console.log(`[主进程] WebSocket状态异常，无法发送: ${this.websocket.readyState}`);
-        logger.warn(`WebSocket状态异常，无法发送音频数据: ${this.websocket.readyState}`);
+      } catch (sendError) {
+        console.log(`[主进程] ❌ WebSocket发送失败:`, sendError);
+        throw sendError; // 重新抛出错误以便上层处理
       }
+      
     } catch (error) {
-      console.log('[主进程] 发送音频数据时发生错误:', error);
-      logger.error('发送音频数据失败:', error);
-      // 发送错误通知到渲染进程
-      this.sendToRenderer('speech:error', {
-        error: 'audio_send_failed',
-        message: '音频数据发送失败: ' + (error instanceof Error ? error.message : String(error))
-      });
+      console.log(`[主进程] sendAudioData出错:`, error);
+      throw error; // 重新抛出错误
     }
   }
 
@@ -678,4 +808,6 @@ export interface TencentSpeechConfig {
 }
 
 // 导出单例实例
+console.log('🚀 [主进程] 正在创建TencentSpeechMainService单例实例');
 export const tencentSpeechMainService = new TencentSpeechMainService();
+console.log('✅ [主进程] TencentSpeechMainService单例实例创建完成');

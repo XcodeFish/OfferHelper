@@ -34,8 +34,9 @@ interface ElectronAPI {
     initialize: (config: any) => Promise<any>;
     start: () => Promise<any>;
     stop: () => Promise<any>;
-    sendAudio: (audioData: ArrayBuffer) => Promise<any>;
+    sendAudio: (audioData: Uint8Array | ArrayBuffer) => Promise<any>;
     getStatus: () => Promise<any>;
+    test?: () => Promise<any>;
   };
 
   // AI分析
@@ -83,8 +84,9 @@ const electronAPI: ElectronAPI = {
     initialize: (config: any) => ipcRenderer.invoke('tencent-speech:initialize', config),
     start: () => ipcRenderer.invoke('tencent-speech:start'),
     stop: () => ipcRenderer.invoke('tencent-speech:stop'),
-    sendAudio: (audioData: ArrayBuffer) => ipcRenderer.invoke('tencent-speech:send-audio', audioData),
+    sendAudio: (audioData: Uint8Array | ArrayBuffer) => ipcRenderer.invoke('tencent-speech:send-audio', audioData),
     getStatus: () => ipcRenderer.invoke('tencent-speech:get-status'),
+    test: () => ipcRenderer.invoke('tencent-speech:test'),
   },
 
   // AI分析
@@ -94,11 +96,18 @@ const electronAPI: ElectronAPI = {
 
   // 事件监听
   on: (channel: string, callback: (...args: any[]) => void) => {
-    ipcRenderer.on(channel, callback);
+    const wrappedCallback = (event: any, ...args: any[]) => callback(...args);
+    // Store the wrapped callback on the original callback for later removal
+    (callback as any)._wrappedCallback = wrappedCallback;
+    ipcRenderer.on(channel, wrappedCallback);
   },
 
   off: (channel: string, callback: (...args: any[]) => void) => {
-    ipcRenderer.off(channel, callback);
+    const wrappedCallback = (callback as any)._wrappedCallback;
+    if (wrappedCallback) {
+      ipcRenderer.off(channel, wrappedCallback);
+      delete (callback as any)._wrappedCallback;
+    }
   },
 
   removeAllListeners: (channel: string) => {

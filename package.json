@@ -41,6 +41,7 @@
     "@types/uuid": "^10.0.0",
     "@types/ws": "^8.18.1",
     "antd": "^5.26.7",
+    "bufferutil": "^4.0.9",
     "crypto-js": "^4.2.0",
     "electron-updater": "^6.1.7",
     "framer-motion": "^10.18.0",
@@ -48,6 +49,7 @@
     "openai": "^4.20.1",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
+    "utf-8-validate": "^6.0.5",
     "uuid": "^11.1.0",
     "ws": "^8.18.3",
     "zustand": "^4.5.7"

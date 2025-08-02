@@ -3,7 +3,8 @@ import * as path from 'path';
 import { WindowManager } from './window/WindowManager';
 import { PrivacyProtector } from './privacy/PrivacyProtector';
 import { SecurityManager } from './security/SecurityManager';
-import { tencentSpeechMainService } from './speech/TencentSpeechMainService';
+// 使用真实API版本 - 实现真正的腾讯云语音识别
+import { tencentSpeechMainServiceRealAPI as tencentSpeechMainService } from './speech/TencentSpeechMainService_RealAPI';
 import { logger } from '../shared/utils/Logger';
 
 class Application {
@@ -12,7 +13,52 @@ class Application {
   private securityManager: SecurityManager | null = null;
 
   constructor() {
+    logger.info('主进程Application构造函数开始执行');
+    this.setupErrorHandlers();
+    logger.info('错误处理器设置完成');
     this.initializeApplication();
+    logger.info('应用初始化完成');
+  }
+
+  private setupErrorHandlers(): void {
+    // 处理未捕获的异常
+    process.on('uncaughtException', (error) => {
+      logger.error('未捕获的异常:', error);
+      console.error('Uncaught Exception:', error);
+      
+      // 对于严重错误，记录并尝试清理资源
+      if (error.name === 'Error' && error.message.includes('IPC')) {
+        logger.error('IPC通信错误，尝试清理资源');
+        // 不退出应用，只是记录错误
+      } else if (error.name === 'TypeError' || error.name === 'ReferenceError') {
+        logger.error(`编程错误，继续运行: ${error.message}`);
+      } else {
+        logger.error(`系统级错误，应用可能不稳定: ${error.message}`);
+      }
+    });
+
+    // 处理未处理的Promise拒绝
+    process.on('unhandledRejection', (reason, promise) => {
+      logger.error('未处理的Promise拒绝:', reason);
+      console.error('Unhandled Rejection at:', promise, 'reason:', reason);
+      
+      // 对特定类型的Promise拒绝进行特殊处理
+      if (reason && typeof reason === 'object' && 'code' in reason) {
+        const errorCode = (reason as any).code;
+        if (errorCode === 'ECONNREFUSED' || errorCode === 'ETIMEDOUT') {
+          logger.warn('网络连接问题，可能影响某些功能');
+        }
+      }
+    });
+
+    // 处理警告
+    process.on('warning', (warning) => {
+      logger.warn(`Node.js警告: ${warning.name} - ${warning.message}`);
+      // 对于MaxListenersExceededWarning特别关注
+      if (warning.name === 'MaxListenersExceededWarning') {
+        logger.warn('事件监听器数量超过限制，可能存在内存泄漏');
+      }
+    });
   }
 
   private async initializeApplication(): Promise<void> {
@@ -27,7 +73,7 @@ class Application {
     this.windowManager = new WindowManager();
     await this.windowManager.createMainWindow();
 
-    // 设置腾讯云语音识别服务的主窗口引用
+    // 设置腾讯云语音识别服务的主窗口引用（简化版）
     const mainWindow = this.windowManager.getMainWindow();
     if (mainWindow) {
       tencentSpeechMainService.setMainWindow(mainWindow);
@@ -155,4 +201,17 @@ class Application {
 }
 
 // 启动应用
-new Application();
+logger.info('主进程即将创建Application实例');
+console.log('=== 主进程启动调试 ===');
+console.log('主进程即将创建Application实例');
+
+try {
+  new Application();
+  console.log('Application实例创建成功');
+} catch (error) {
+  logger.error('创建Application实例失败:', error);
+  console.error('Fatal error during application startup:', error);
+  // 写入文件进行调试
+  require('fs').writeFileSync('/tmp/electron-crash.log', 
+    `Application startup failed: ${error}\nStack: ${error instanceof Error ? error.stack : 'No stack'}`);
+}
