@@ -1,4 +1,7 @@
-import React, { useState, useEffect, useRef } from 'react';
+import { VoiceRecognitionManager } from '../services/tencent-speech-recognizer';
+import { useAppDispatch, useAppSelector } from '../store/hooks';
+import { generateResponse } from '../store/slices/ai-slice';
+>>>>>>> 9d5cdfd (fix: 移除硬编码的敏感信息，使用环境变量替代)
 import './main-interface.css';
 
 interface MainInterfaceProps {
@@ -7,6 +10,7 @@ interface MainInterfaceProps {
   onShowSettings: () => void;
 }
 
+<<<<<<< HEAD
 interface VoiceState {
   isListening: boolean;
   volume: number[];
@@ -19,6 +23,78 @@ const MainInterface: React.FC<MainInterfaceProps> = ({ user, onLogout, onShowSet
     volume: [0, 0, 0, 0, 0],
     status: '待机中...'
   });
+const MainInterface: React.FC<MainInterfaceProps> = ({ user, onLogout, onShowSettings, onShowVoiceTest }) => {
+  const dispatch = useAppDispatch();
+  
+  // 语音识别状态 - 从voice-test-simple迁移
+  const [isConnected, setIsConnected] = useState(false);
+  const [isRecording, setIsRecording] = useState(false);
+  const [recognitionText, setRecognitionText] = useState('');
+  const [finalText, setFinalText] = useState('');
+  const [connectionStatus, setConnectionStatus] = useState('未连接');
+  const [voiceManager, setVoiceManager] = useState<VoiceRecognitionManager | null>(null);
+>>>>>>> 9d5cdfd (fix: 移除硬编码的敏感信息，使用环境变量替代)
+import React, { useState, useEffect, useRef } from 'react';
+import { VoiceRecognitionManager } from '../services/tencent-speech-recognizer';
+import { useAppDispatch, useAppSelector } from '../store/hooks';
+import { generateResponse } from '../store/slices/ai-slice';
+import './main-interface.css';
+
+interface MainInterfaceProps {
+  user: { email: string } | null;
+  onLogout: () => void;
+  onShowSettings: () => void;
+  onShowVoiceTest: () => void;
+}
+
+const MainInterface: React.FC<MainInterfaceProps> = ({ user, onLogout, onShowSettings, onShowVoiceTest }) => {
+  const dispatch = useAppDispatch();
+  
+  // 语音识别状态 - 从voice-test-simple迁移
+  const [isConnected, setIsConnected] = useState(false);
+  const [isRecording, setIsRecording] = useState(false);
+  const [recognitionText, setRecognitionText] = useState('');
+  const [finalText, setFinalText] = useState('');
+  const [connectionStatus, setConnectionStatus] = useState('未连接');
+  const [voiceManager, setVoiceManager] = useState<VoiceRecognitionManager | null>(null);
+=======
+import { VoiceRecognitionManager } from '../services/tencent-speech-recognizer';
+import { useAppDispatch, useAppSelector } from '../store/hooks';
+import { generateResponse } from '../store/slices/ai-slice';
+>>>>>>> 9d5cdfd (fix: 移除硬编码的敏感信息，使用环境变量替代)
+import './main-interface.css';
+
+interface MainInterfaceProps {
+  user: { email: string } | null;
+  onLogout: () => void;
+  onShowSettings: () => void;
+}
+
+<<<<<<< HEAD
+interface VoiceState {
+  isListening: boolean;
+  volume: number[];
+  status: string;
+}
+
+const MainInterface: React.FC<MainInterfaceProps> = ({ user, onLogout, onShowSettings }) => {
+  const [voiceState, setVoiceState] = useState<VoiceState>({
+    isListening: false,
+    volume: [0, 0, 0, 0, 0],
+    status: '待机中...'
+  });
+=======
+const MainInterface: React.FC<MainInterfaceProps> = ({ user, onLogout, onShowSettings, onShowVoiceTest }) => {
+  const dispatch = useAppDispatch();
+  
+  // 语音识别状态 - 从voice-test-simple迁移
+  const [isConnected, setIsConnected] = useState(false);
+  const [isRecording, setIsRecording] = useState(false);
+  const [recognitionText, setRecognitionText] = useState('');
+  const [finalText, setFinalText] = useState('');
+  const [connectionStatus, setConnectionStatus] = useState('未连接');
+  const [voiceManager, setVoiceManager] = useState<VoiceRecognitionManager | null>(null);
+>>>>>>> 9d5cdfd (fix: 移除硬编码的敏感信息，使用环境变量替代)
   
   const [currentMode, setCurrentMode] = useState<'simple' | 'normal' | 'detailed'>('normal');
   const [opacity, setOpacity] = useState(90);
@@ -49,9 +125,10 @@ const MainInterface: React.FC<MainInterfaceProps> = ({ user, onLogout, onShowSet
     }
   };
 
-  // 开始面试
-  const startInterview = async () => {
+  // 加载配置 - 从voice-test-simple迁移
+  const loadConfig = async () => {
     try {
+<<<<<<< HEAD
       setIsInterviewStarted(true);
       setVoiceState(prev => ({
         ...prev,
@@ -80,12 +157,126 @@ const MainInterface: React.FC<MainInterfaceProps> = ({ user, onLogout, onShowSet
         isListening: false,
         status: '待机中...'
       }));
+=======
+      console.log('[UI] 开始加载配置...');
+      
+      // 先尝试从设置服务获取配置
+      const configResponse = await (window as any).electronAPI.settings.get('voice');
+      console.log('[UI] 设置服务响应:', configResponse);
+      
+      let config;
+      
+      if (configResponse.success && configResponse.settings && 
+          configResponse.settings.appId && 
+          configResponse.settings.secretId && 
+          configResponse.settings.secretKey) {
+        // 使用设置服务中的配置
+        config = {
+          appid: configResponse.settings.appId,
+          secretid: configResponse.settings.secretId,
+          secretkey: configResponse.settings.secretKey,
+          engine_model_type: '16k_zh',
+          voice_format: 1,
+        };
+        console.log('[UI] 使用设置服务配置');
+      } else {
+        // 使用环境变量配置作为后备
+        console.log('[UI] 设置服务配置不完整，尝试使用环境变量...');
+        
+        try {
+          const envConfigResponse = await (window as any).electronAPI.voice.getConfig();
+          console.log('[UI] 环境变量配置响应:', envConfigResponse);
+          
+          if (envConfigResponse.success && envConfigResponse.data) {
+            config = {
+              appid: envConfigResponse.data.appId,
+              secretid: envConfigResponse.data.secretId,
+              secretkey: envConfigResponse.data.secretKey,
+              engine_model_type: '16k_zh',
+              voice_format: 1,
+            };
+            console.log('[UI] 使用环境变量配置');
+          } else {
+            throw new Error('无法获取有效配置');
+          }
+        } catch (envError) {
+          console.error('[UI] 获取环境变量配置失败:', envError);
+          setConnectionStatus('配置获取失败');
+          return;
+        }
+      }
+
+      console.log('[UI] 最终使用的配置:', {
+        appid: config.appid,
+        secretid: config.secretid ? '***' + config.secretid.slice(-4) : '未设置',
+        secretkey: config.secretkey ? '***' + config.secretkey.slice(-4) : '未设置',
+        engine_model_type: config.engine_model_type,
+        voice_format: config.voice_format,
+      });
+
+      const manager = new VoiceRecognitionManager(config);
+      
+      // 设置回调函数
+      manager.onRecognitionStart = (res) => {
+        console.log('[UI] ✅ 识别开始:', res);
+        setIsConnected(true);
+        setConnectionStatus('已连接');
+      };
+
+      manager.onRecognitionResultChange = (res) => {
+        console.log('[UI] 🔄 识别结果变化:', res);
+        if (res.result && res.result.voice_text_str) {
+          console.log('[UI] 📝 识别到文本:', res.result.voice_text_str);
+          setRecognitionText(res.result.voice_text_str);
+          // 更新问题显示
+          setQuestion(res.result.voice_text_str);
+        }
+      };
+
+      manager.onSentenceEnd = (res) => {
+        console.log('[UI] ✅ 句子结束:', res);
+        if (res.result && res.result.voice_text_str) {
+          console.log('[UI] 📝 最终文本:', res.result.voice_text_str);
+          const newText = res.result.voice_text_str + ' ';
+          setFinalText(prev => prev + newText);
+          setQuestion(prev => prev + newText);
+          setRecognitionText('');
+        }
+      };
+
+      manager.onRecognitionComplete = (res) => {
+        console.log('[UI] 🏁 识别完成:', res);
+        setIsRecording(false);
+        setConnectionStatus('识别完成');
+      };
+
+      manager.onError = (error) => {
+        console.error('[UI] ❌ 识别错误:', error);
+        setIsConnected(false);
+        setIsRecording(false);
+        setConnectionStatus('连接错误: ' + (error.message || JSON.stringify(error)));
+      };
+
+      setVoiceManager(manager);
+      console.log('[UI] ✅ 语音管理器初始化完成');
+      setConnectionStatus('语音管理器已初始化');
+      
+    } catch (error) {
+      console.error('[UI] ❌ 加载配置失败:', error);
+      setConnectionStatus('配置加载失败: ' + (error instanceof Error ? error.message : String(error)));
+>>>>>>> 9d5cdfd (fix: 移除硬编码的敏感信息，使用环境变量替代)
     }
   };
 
-  // 结束面试
-  const stopInterview = async () => {
+  // 开始面试 - 替换为语音录音功能
+  const handleStartRecording = async () => {
+    if (!voiceManager) {
+      console.error('[UI] 语音管理器未初始化');
+      return;
+    }
+
     try {
+<<<<<<< HEAD
       setIsInterviewStarted(false);
       setVoiceState(prev => ({
         ...prev,
@@ -100,17 +291,61 @@ const MainInterface: React.FC<MainInterfaceProps> = ({ user, onLogout, onShowSet
           console.log('语音录制已停止');
         }
       }
+=======
+      console.log('[UI] 🎤 准备开始录音...');
+      setConnectionStatus('正在连接...');
+      
+      // 检查麦克风权限
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        console.log('[UI] ✅ 麦克风权限获取成功');
+        stream.getTracks().forEach(track => track.stop()); // 释放临时流
+      } catch (permError) {
+        console.error('[UI] ❌ 麦克风权限获取失败:', permError);
+        setConnectionStatus('麦克风权限获取失败');
+        return;
+      }
+      
+      console.log('[UI] 🔗 开始建立WebSocket连接...');
+      await voiceManager.start();
+      setIsRecording(true);
+      setConnectionStatus('录音中...');
+      console.log('[UI] ✅ 录音已开始');
+>>>>>>> 9d5cdfd (fix: 移除硬编码的敏感信息，使用环境变量替代)
     } catch (error) {
-      console.error('结束面试失败:', error);
+      console.error('[UI] ❌ 开始录音失败:', error);
+      setConnectionStatus('录音失败: ' + (error instanceof Error ? error.message : String(error)));
+    }
+  };
+
+  // 结束面试 - 替换为停止录音功能
+  const handleStopRecording = () => {
+    if (!voiceManager) {
+      console.error('[UI] 语音管理器未初始化');
+      return;
+    }
+
+    try {
+      voiceManager.stop();
+      setIsRecording(false);
+      setConnectionStatus('录音已停止');
+      console.log('[UI] 停止录音');
+    } catch (error) {
+      console.error('[UI] 停止录音失败:', error);
     }
   };
 
   // 切换监听状态
   const toggleListening = () => {
+<<<<<<< HEAD
     if (isInterviewStarted) {
       stopInterview();
+=======
+    if (isRecording) {
+      handleStopRecording();
+>>>>>>> 9d5cdfd (fix: 移除硬编码的敏感信息，使用环境变量替代)
     } else {
-      startInterview();
+      handleStartRecording();
     }
   };
 
@@ -150,9 +385,22 @@ const MainInterface: React.FC<MainInterfaceProps> = ({ user, onLogout, onShowSet
   const clearContent = () => {
     setQuestion('');
     setAnswer('');
+<<<<<<< HEAD
   };
 
   // 生成模拟回答
+=======
+    setRecognitionText('');
+    setFinalText('');
+  };
+
+  // 初始化配置加载
+  useEffect(() => {
+    loadConfig();
+  }, []);
+
+  // 生成模拟回答（保留作为备用）
+>>>>>>> 9d5cdfd (fix: 移除硬编码的敏感信息，使用环境变量替代)
   const generateMockAnswer = (questionText: string, mode: 'simple' | 'normal' | 'detailed') => {
     const answers = {
       simple: {
@@ -288,6 +536,7 @@ const MainInterface: React.FC<MainInterfaceProps> = ({ user, onLogout, onShowSet
       {/* 状态栏 */}
       <div className="status-bar">
         <div className="status-left">
+<<<<<<< HEAD
           <div className="mic-status">
             <span className="mic-icon">🎤</span>
             <span>{voiceState.status}</span>
@@ -303,12 +552,30 @@ const MainInterface: React.FC<MainInterfaceProps> = ({ user, onLogout, onShowSet
               ></div>
             ))}
           </div>
+=======
+        <div className="mic-status">
+          <span className="mic-icon">🎤</span>
+          <span>{connectionStatus}</span>
+          <div className={`recording-indicator ${isRecording ? 'active' : ''}`}></div>
+        </div>
+        
+        <div className="volume-visualizer">
+          {[0, 1, 2, 3, 4].map(i => (
+            <div 
+              key={i}
+              className={`volume-bar ${isRecording ? 'active' : ''}`}
+              style={{ animationDelay: `${i * 0.1}s` }}
+            ></div>
+          ))}
+        </div>
+>>>>>>> 9d5cdfd (fix: 移除硬编码的敏感信息，使用环境变量替代)
         </div>
         
         <div className="status-right">
           <button 
             className={`interview-btn ${isInterviewStarted ? 'stop' : 'start'}`}
             onClick={toggleListening}
+            disabled={!voiceManager}
           >
             {isInterviewStarted ? '结束面试' : '开始面试'}
           </button>

@@ -185,11 +185,45 @@
   border-radius: 50%;
   cursor: pointer;
   transition: all var(--transition-fast);
+  border: 2px solid #ffffff;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 }
 
 .setting-group input[type="range"]::-webkit-slider-thumb:hover {
   transform: scale(1.1);
-  box-shadow: 0 0 0 4px rgba(0, 122, 204, 0.2);
+  box-shadow: 0 0 0 4px rgba(0, 122, 204, 0.2), 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+/* 浅色主题下的滑块优化 */
+[data-theme="light"] .setting-group input[type="range"] {
+  background: #e0e0e0;
+  border: 1px solid #d0d0d0;
+}
+
+[data-theme="light"] .setting-group input[type="range"]::-webkit-slider-thumb {
+  background: var(--accent-color);
+  border: 2px solid #ffffff;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+}
+
+[data-theme="light"] .setting-group input[type="range"]::-webkit-slider-thumb:hover {
+  box-shadow: 0 0 0 4px rgba(0, 122, 255, 0.3), 0 2px 6px rgba(0, 0, 0, 0.3);
+}
+
+/* 暗色主题下的滑块优化 */
+[data-theme="dark"] .setting-group input[type="range"] {
+  background: #404040;
+  border: 1px solid #555555;
+}
+
+[data-theme="dark"] .setting-group input[type="range"]::-webkit-slider-thumb {
+  background: var(--accent-color);
+  border: 2px solid #2d2d2d;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+}
+
+[data-theme="dark"] .setting-group input[type="range"]::-webkit-slider-thumb:hover {
+  box-shadow: 0 0 0 4px rgba(0, 122, 204, 0.2), 0 2px 4px rgba(0, 0, 0, 0.5);
 }
 
 .range-labels {

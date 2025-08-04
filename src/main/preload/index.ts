@@ -31,13 +31,94 @@ interface ElectronAPI {
     getModels: () => Promise<string[]>;
   };
 
+    getAll: () => Promise<{ success: boolean; data?: any; error?: string }>;
+    get: (
+      key: string
+    ) => Promise<{ success: boolean; data?: any; error?: string }>;
+    set: (
+      key: string,
+      value: any
+    ) => Promise<{ success: boolean; data?: any; error?: string }>;
+    update: (
+      updates: any
+    ) => Promise<{ success: boolean; data?: any; error?: string }>;
+    reset: () => Promise<{ success: boolean; data?: any; error?: string }>;
+    export: () => Promise<{ success: boolean; data?: any; error?: string }>;
+    import: (
+      importData: any
+    ) => Promise<{ success: boolean; data?: any; error?: string }>;
+>>>>>>> 9d5cdfd (fix: 移除硬编码的敏感信息，使用环境变量替代)
+  };
+import { contextBridge, ipcRenderer } from 'electron';
+
+// 定义API接口
+interface ElectronAPI {
+  // 应用相关
+  app: {
+    getVersion: () => Promise<string>;
+    getPlatform: () => Promise<string>;
+  };
+
+  // 语音相关
+  voice: {
+    startRecording: () => Promise<{ success: boolean; message: string }>;
+    stopRecording: () => Promise<{ success: boolean; audioData?: Buffer }>;
+    getRecordingStatus: () => Promise<{ isRecording: boolean }>;
+    transcribe: (
+      audioData: Buffer
+    ) => Promise<{ text: string; confidence: number }>;
+  };
+
+  // AI相关
+  ai: {
+    chat: (
+      message: string,
+      context?: any
+    ) => Promise<{ response: string; usage?: any }>;
+    generateResponse: (
+      prompt: string,
+      options?: any
+    ) => Promise<{ response: string }>;
+    getModels: () => Promise<string[]>;
+  };
+
   // 设置相关
   settings: {
-    get: (key?: string) => Promise<any>;
-    set: (settings: any) => Promise<{ success: boolean; error?: string }>;
-    reset: () => Promise<void>;
-    export: () => Promise<any>;
-    import: (settings: any) => Promise<void>;
+    getAll: () => Promise<{ success: boolean; data?: any; error?: string }>;
+    get: (
+      key: string
+    ) => Promise<{ success: boolean; data?: any; error?: string }>;
+    set: (
+      key: string,
+      value: any
+    ) => Promise<{ success: boolean; data?: any; error?: string }>;
+    update: (
+      updates: any
+    ) => Promise<{ success: boolean; data?: any; error?: string }>;
+    reset: () => Promise<{ success: boolean; data?: any; error?: string }>;
+    export: () => Promise<{ success: boolean; data?: any; error?: string }>;
+    import: (
+      importData: any
+    ) => Promise<{ success: boolean; data?: any; error?: string }>;
+  };
+=======
+    getAll: () => Promise<{ success: boolean; data?: any; error?: string }>;
+    get: (
+      key: string
+    ) => Promise<{ success: boolean; data?: any; error?: string }>;
+    set: (
+      key: string,
+      value: any
+    ) => Promise<{ success: boolean; data?: any; error?: string }>;
+    update: (
+      updates: any
+    ) => Promise<{ success: boolean; data?: any; error?: string }>;
+    reset: () => Promise<{ success: boolean; data?: any; error?: string }>;
+    export: () => Promise<{ success: boolean; data?: any; error?: string }>;
+    import: (
+      importData: any
+    ) => Promise<{ success: boolean; data?: any; error?: string }>;
+>>>>>>> 9d5cdfd (fix: 移除硬编码的敏感信息，使用环境变量替代)
   };
 
   // 窗口控制相关
@@ -109,8 +190,16 @@ const electronAPI: ElectronAPI = {
   },
 
   settings: {
+<<<<<<< HEAD
     get: (key?: string) => ipcRenderer.invoke('settings:get', key),
     set: (settings: any) => ipcRenderer.invoke('settings:set', settings),
+=======
+    getAll: () => ipcRenderer.invoke('settings:getAll'),
+    get: (key: string) => ipcRenderer.invoke('settings:get', key),
+    set: (key: string, value: any) =>
+      ipcRenderer.invoke('settings:update', { [key]: value }),
+    update: (updates: any) => ipcRenderer.invoke('settings:update', updates),
+>>>>>>> 9d5cdfd (fix: 移除硬编码的敏感信息，使用环境变量替代)
     reset: () => ipcRenderer.invoke('settings:reset'),
     export: () => ipcRenderer.invoke('settings:export'),
     import: (settings: any) => ipcRenderer.invoke('settings:import', settings),

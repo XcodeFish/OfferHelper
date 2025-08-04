@@ -3,6 +3,7 @@ export class ThemeManager {
   private static instance: ThemeManager;
   private currentTheme: 'light' | 'dark' | 'auto' = 'dark';
   private listeners: ((theme: string) => void)[] = [];
+  private isInitialized: boolean = false;
 
   private constructor() {
     this.initTheme();
@@ -17,11 +18,16 @@ export class ThemeManager {
 
   // 初始化主题
   private async initTheme() {
+    // 防止重复初始化
+    if (this.isInitialized) {
+      return;
+    }
+
     try {
       if (window.electronAPI?.theme) {
         const result = await window.electronAPI.theme.get();
-        if (result.success && result.theme) {
-          this.currentTheme = result.theme as 'light' | 'dark' | 'auto';
+        if (result.success && result.data?.theme) {
+          this.currentTheme = result.data.theme as 'light' | 'dark' | 'auto';
         }
       }
     } catch (error) {
@@ -30,6 +36,7 @@ export class ThemeManager {
 
     this.applyTheme();
     this.setupThemeListener();
+    this.isInitialized = true;
   }
 
   // 设置主题监听器
@@ -58,8 +65,8 @@ export class ThemeManager {
       try {
         if (window.electronAPI?.theme) {
           const result = await window.electronAPI.theme.getSystemTheme();
-          if (result.success && result.theme) {
-            return result.theme as 'light' | 'dark';
+          if (result.success && result.data?.theme) {
+            return result.data.theme as 'light' | 'dark';
           }
         }
       } catch (error) {
@@ -74,20 +81,23 @@ export class ThemeManager {
   private updateCSSVariables(theme: 'light' | 'dark') {
     const root = document.documentElement;
 
-    console.log('正在应用主题:', theme); // 调试日志
+    // 只在初始化时打印日志，避免重复打印
+    if (!this.isInitialized) {
+      console.log('正在应用主题:', theme);
+    }
 
     if (theme === 'light') {
       // 浅色主题变量 - 专业的浅色配色方案
-      root.style.setProperty('--primary-bg', '#f5f5f7');        // 苹果风格的浅灰背景
-      root.style.setProperty('--secondary-bg', '#ffffff');       // 纯白色卡片背景
-      root.style.setProperty('--text-primary', '#1d1d1f');       // 深灰色主文字
-      root.style.setProperty('--text-secondary', '#86868b');     // 中灰色次要文字
-      root.style.setProperty('--border-color', '#d2d2d7');       // 浅灰色边框
-      root.style.setProperty('--accent-color', '#007aff');       // iOS蓝色强调色
-      root.style.setProperty('--success-color', '#34c759');      // iOS绿色
-      root.style.setProperty('--warning-color', '#ff9500');      // iOS橙色
-      root.style.setProperty('--error-color', '#ff3b30');        // iOS红色
-      root.style.setProperty('--listening-color', '#007aff');    // 与强调色一致
+      root.style.setProperty('--primary-bg', '#f5f5f7'); // 苹果风格的浅灰背景
+      root.style.setProperty('--secondary-bg', '#ffffff'); // 纯白色卡片背景
+      root.style.setProperty('--text-primary', '#1d1d1f'); // 深灰色主文字
+      root.style.setProperty('--text-secondary', '#86868b'); // 中灰色次要文字
+      root.style.setProperty('--border-color', '#d2d2d7'); // 浅灰色边框
+      root.style.setProperty('--accent-color', '#007aff'); // iOS蓝色强调色
+      root.style.setProperty('--success-color', '#34c759'); // iOS绿色
+      root.style.setProperty('--warning-color', '#ff9500'); // iOS橙色
+      root.style.setProperty('--error-color', '#ff3b30'); // iOS红色
+      root.style.setProperty('--listening-color', '#007aff'); // 与强调色一致
 
       // 强制更新body背景色
       document.body.style.backgroundColor = '#f5f5f7';
