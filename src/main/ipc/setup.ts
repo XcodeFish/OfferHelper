@@ -1,8 +1,8 @@
 import { ipcMain } from 'electron';
 import { voiceHandlers } from './handlers/voice-handlers';
-import { aiHandlers } from './handlers/ai-handlers';
 import { authHandlers } from './handlers/auth-handlers';
 import { setupSettingsHandlers } from './handlers/settings-handlers';
+import { glmHandlers } from './handlers/glm-handlers';
 
 export function setupIpcHandlers(): void {
   // 语音相关处理器
@@ -10,13 +10,13 @@ export function setupIpcHandlers(): void {
     ipcMain.handle(channel, handler);
   });
 
-  // AI相关处理器
-  Object.entries(aiHandlers).forEach(([channel, handler]) => {
+  // 认证相关处理器
+  Object.entries(authHandlers).forEach(([channel, handler]) => {
     ipcMain.handle(channel, handler);
   });
 
-  // 认证相关处理器
-  Object.entries(authHandlers).forEach(([channel, handler]) => {
+  // GLM大模型相关处理器
+  Object.entries(glmHandlers).forEach(([channel, handler]) => {
     ipcMain.handle(channel, handler);
   });
 

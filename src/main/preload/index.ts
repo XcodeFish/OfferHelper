@@ -85,6 +85,26 @@ interface ElectronAPI {
     }>;
   };
 
+  // GLM大模型相关
+  glm: {
+    createSession: (sessionId: string, scenario?: string) => Promise<any>;
+    sendMessage: (
+      sessionId: string,
+      message: string,
+      options?: any
+    ) => Promise<any>;
+    getSessionHistory: (sessionId: string) => Promise<any>;
+    resetSession: (sessionId: string) => Promise<any>;
+    deleteSession: (sessionId: string) => Promise<any>;
+    getConfigStatus: () => Promise<any>;
+    testConnection: () => Promise<any>;
+    getInterviewScenarios: () => Promise<any>;
+    cleanupSessions: () => Promise<any>;
+  };
+
+  // 通用调用方法
+  invoke: (channel: string, ...args: any[]) => Promise<any>;
+
   // 主题相关
   theme: {
     set: (
@@ -166,6 +186,28 @@ const electronAPI: ElectronAPI = {
     getConfig: () => ipcRenderer.invoke('tencent:get-config'),
     getConfigStatus: () => ipcRenderer.invoke('tencent:get-config-status'),
   },
+
+  glm: {
+    createSession: (sessionId: string, scenario?: string) =>
+      ipcRenderer.invoke('glm:create-session', sessionId, scenario),
+    sendMessage: (sessionId: string, message: string, options?: any) =>
+      ipcRenderer.invoke('glm:send-message', sessionId, message, options),
+    getSessionHistory: (sessionId: string) =>
+      ipcRenderer.invoke('glm:get-session-history', sessionId),
+    resetSession: (sessionId: string) =>
+      ipcRenderer.invoke('glm:reset-session', sessionId),
+    deleteSession: (sessionId: string) =>
+      ipcRenderer.invoke('glm:delete-session', sessionId),
+    getConfigStatus: () => ipcRenderer.invoke('glm:get-config-status'),
+    testConnection: () => ipcRenderer.invoke('glm:test-connection'),
+    getInterviewScenarios: () =>
+      ipcRenderer.invoke('glm:get-interview-scenarios'),
+    cleanupSessions: () => ipcRenderer.invoke('glm:cleanup-sessions'),
+  },
+
+  // 通用调用方法
+  invoke: (channel: string, ...args: any[]) =>
+    ipcRenderer.invoke(channel, ...args),
 };
 
 contextBridge.exposeInMainWorld('electronAPI', electronAPI);

@@ -2,6 +2,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import './main-interface.css';
 import { TencentSpeechRecognizer } from '../services/tencent-speech-recognizer';
 import { getTencentConfig, validateTencentConfig } from '../config/tencent-config';
+import { glmService, GLMResponse } from '../services/glm-service';
+import DebugPanel from './debug-panel';
 
 interface MainInterfaceProps {
   user: { email: string } | null;
@@ -31,6 +33,10 @@ const MainInterface: React.FC<MainInterfaceProps> = ({ user, onLogout, onShowSet
   const [speechRecognizer, setSpeechRecognizer] = useState<TencentSpeechRecognizer | null>(null);
   const [recognizedText, setRecognizedText] = useState('');
   const [isConfigValid, setIsConfigValid] = useState(false);
+  const [currentSessionId, setCurrentSessionId] = useState<string | null>(null);
+  const [isGLMConfigured, setIsGLMConfigured] = useState(false);
+  const [glmResponseTime, setGlmResponseTime] = useState<number>(0);
+  const [showDebugPanel, setShowDebugPanel] = useState(false);
 
   const questionPlaceholder = '识别到的问题文本会显示在这里...';
   const answerPlaceholder = 'AI生成的回答内容会显示在这里...';
@@ -54,58 +60,123 @@ const MainInterface: React.FC<MainInterfaceProps> = ({ user, onLogout, onShowSet
     }
   };
 
-  // 初始化语音识别器
-  const initializeSpeechRecognizer = async () => {
+  // 初始化语音识别器和GLM服务
+  const initializeServices = async () => {
     try {
+      // 初始化语音识别器
       const config = await getTencentConfig();
       const isValid = validateTencentConfig(config);
       setIsConfigValid(isValid);
 
       if (!isValid) {
         console.warn('腾讯云配置无效，请在环境变量中配置正确的 TENCENT_APP_ID、TENCENT_SECRET_ID 和 TENCENT_SECRET_KEY');
-        return;
+      } else {
+        const recognizer = new TencentSpeechRecognizer({
+          appId: config.appId,
+          secretId: config.secretId,
+          secretKey: config.secretKey,
+          engineModelType: '16k_zh',
+          voiceFormat: 1
+        });
+
+        // 设置识别事件回调
+        recognizer.setCallbacks(
+          async (result) => {
+            console.log('识别结果:', result);
+            if (result.result && result.result.voice_text_str) {
+              const text = result.result.voice_text_str;
+              setRecognizedText(text);
+              setQuestion(text);
+              
+              // 如果是最终结果且GLM配置有效，发送给AI处理
+              if (result.final === 1 && isGLMConfigured && currentSessionId) {
+                await handleVoiceToAI(text);
+              }
+            }
+          },
+          (error) => {
+            console.error('识别错误:', error);
+            setVoiceState(prev => ({
+              ...prev,
+              isListening: false,
+              status: '识别出错'
+            }));
+            setIsInterviewStarted(false);
+          },
+          (status) => {
+            console.log('状态变化:', status);
+            setVoiceState(prev => ({
+              ...prev,
+              status: status
+            }));
+          }
+        );
+
+        setSpeechRecognizer(recognizer);
       }
 
-      const recognizer = new TencentSpeechRecognizer({
-        appId: config.appId,
-        secretId: config.secretId,
-        secretKey: config.secretKey,
-        engineModelType: '16k_zh',
-        voiceFormat: 1  // 使用数字格式
-      });
+      // 检查GLM配置
+      const glmStatus = await glmService.getConfigStatus();
+      setIsGLMConfigured(glmStatus.isConfigured);
+      
+      if (!glmStatus.isConfigured) {
+        console.warn('GLM配置无效，请检查AI_API_KEY等环境变量');
+      } else {
+        console.log('GLM服务配置有效，模型:', glmStatus.model);
+      }
 
-      // 设置识别事件回调
-      recognizer.setCallbacks(
-        (result) => {
-          console.log('识别结果:', result);
-          if (result.result && result.result.voice_text_str) {
-            const text = result.result.voice_text_str;
-            setRecognizedText(text);
-            setQuestion(text);
-          }
-        },
-        (error) => {
-          console.error('识别错误:', error);
-          setVoiceState(prev => ({
-            ...prev,
-            isListening: false,
-            status: '识别出错'
-          }));
-          setIsInterviewStarted(false);
-        },
-        (status) => {
-          console.log('状态变化:', status);
-          setVoiceState(prev => ({
-            ...prev,
-            status: status
-          }));
+    } catch (error) {
+      console.error('初始化服务失败:', error);
+      setIsConfigValid(false);
+      setIsGLMConfigured(false);
+    }
+  };
+
+  // 处理语音转AI回复
+  const handleVoiceToAI = async (voiceText: string) => {
+    if (!currentSessionId || !voiceText.trim()) {
+      return;
+    }
+
+    try {
+      setIsGenerating(true);
+      setAnswer('');
+
+      console.log('发送语音文本到GLM:', voiceText);
+
+      const response: GLMResponse = await glmService.sendMessage(
+        currentSessionId,
+        voiceText,
+        {
+          temperature: 0.3,
+          maxTokens: 500,
+          audioSource: true
         }
       );
 
-      setSpeechRecognizer(recognizer);
+      setGlmResponseTime(response.responseTime);
+      
+      // 模拟打字机效果显示AI回复
+      let i = 0;
+      const content = response.content;
+      const typeInterval = setInterval(() => {
+        if (content[i] === '\n') {
+          setAnswer(prev => prev + '\n');
+        } else {
+          setAnswer(prev => prev + content[i]);
+        }
+        i++;
+        
+        if (i >= content.length) {
+          clearInterval(typeInterval);
+          setIsGenerating(false);
+        }
+      }, 30);
+
     } catch (error) {
-      console.error('初始化语音识别器失败:', error);
-      setIsConfigValid(false);
+      console.error('AI处理语音失败:', error);
+      setIsGenerating(false);
+      setAnswer('抱歉，AI处理出现错误，请稍后重试。');
     }
   };
 
@@ -126,7 +197,7 @@ const MainInterface: React.FC<MainInterfaceProps> = ({ user, onLogout, onShowSet
       setVoiceState(prev => ({
         ...prev,
         isListening: true,
-        status: '正在启动语音识别...'
+        status: '正在启动面试...'
       }));
 
       // 清空之前的识别结果
@@ -134,10 +205,27 @@ const MainInterface: React.FC<MainInterfaceProps> = ({ user, onLogout, onShowSet
       setQuestion('');
       setAnswer('');
 
+      // 如果GLM配置有效，创建新的对话会话
+      if (isGLMConfigured) {
+        try {
+          const sessionId = await glmService.createSession('general');
+          setCurrentSessionId(sessionId);
+          console.log('GLM会话创建成功:', sessionId);
+        } catch (error) {
+          console.error('创建GLM会话失败:', error);
+          // 即使GLM会话创建失败，也可以继续语音识别
+        }
+      }
+
       // 启动腾讯语音识别
       await speechRecognizer.start();
       
-      console.log('语音识别已启动');
+      setVoiceState(prev => ({
+        ...prev,
+        status: '面试进行中...'
+      }));
+      
+      console.log('面试已启动');
     } catch (error) {
       console.error('开始面试失败:', error);
       setIsInterviewStarted(false);
@@ -148,7 +236,7 @@ const MainInterface: React.FC<MainInterfaceProps> = ({ user, onLogout, onShowSet
       }));
       
       if (error instanceof Error) {
-        alert(`启动语音识别失败: ${error.message}`);
+        alert(`启动面试失败: ${error.message}`);
       }
     }
   };
@@ -315,14 +403,17 @@ const MainInterface: React.FC<MainInterfaceProps> = ({ user, onLogout, onShowSet
     return () => document.removeEventListener('keydown', handleKeydown);
   }, []);
 
-  // 初始化语音识别器
+  // 初始化服务
   useEffect(() => {
-    initializeSpeechRecognizer();
+    initializeServices();
     
     // 组件卸载时清理资源
     return () => {
       if (speechRecognizer) {
         speechRecognizer.destroy();
+      }
+      if (currentSessionId) {
+        glmService.deleteSession(currentSessionId).catch(console.error);
       }
     };
   }, []);
@@ -357,6 +448,9 @@ const MainInterface: React.FC<MainInterfaceProps> = ({ user, onLogout, onShowSet
         
         <div className="title-bar-buttons">
           <button className="title-btn" onClick={onShowSettings}>设置</button>
+          <button className="title-btn" onClick={() => setShowDebugPanel(!showDebugPanel)}>
+            调试
+          </button>
           <button className="title-btn" onClick={handleHide}>隐藏</button>
         </div>
       </div>
@@ -370,7 +464,17 @@ const MainInterface: React.FC<MainInterfaceProps> = ({ user, onLogout, onShowSet
             <div className={`recording-indicator ${voiceState.isListening ? 'active' : ''}`}></div>
             {!isConfigValid && (
               <span style={{ color: '#ff6b6b', fontSize: '12px', marginLeft: '8px' }}>
-                (配置无效)
+                (语音识别配置无效)
+              </span>
+            )}
+            {!isGLMConfigured && (
+              <span style={{ color: '#ff9500', fontSize: '12px', marginLeft: '8px' }}>
+                (GLM配置无效)
+              </span>
+            )}
+            {isGLMConfigured && currentSessionId && (
+              <span style={{ color: '#4CAF50', fontSize: '12px', marginLeft: '8px' }}>
+                (AI已连接)
               </span>
             )}
           </div>
@@ -440,6 +544,15 @@ const MainInterface: React.FC<MainInterfaceProps> = ({ user, onLogout, onShowSet
         <div className="action-buttons">
           <button className="action-btn" onClick={copyAnswer}>复制</button>
           <button className="action-btn" onClick={clearContent}>清除</button>
+          {glmResponseTime > 0 && (
+            <span className="response-time" style={{ 
+              fontSize: '12px', 
+              color: '#666', 
+              marginLeft: '8px' 
+            }}>
+              响应时间: {glmResponseTime}ms
+            </span>
+          )}
         </div>
       </div>
 
@@ -456,6 +569,12 @@ const MainInterface: React.FC<MainInterfaceProps> = ({ user, onLogout, onShowSet
         />
         <span className="opacity-value">{opacity}%</span>
       </div>
+
+      {/* 调试面板 */}
+      <DebugPanel 
+        isVisible={showDebugPanel} 
+        onClose={() => setShowDebugPanel(false)} 
+      />
     </div>
   );
 };
