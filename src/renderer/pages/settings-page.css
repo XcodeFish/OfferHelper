@@ -175,6 +175,7 @@
   outline: none;
   -webkit-appearance: none;
   cursor: pointer;
+  position: relative;
 }
 
 .setting-group input[type="range"]::-webkit-slider-thumb {
@@ -185,11 +186,31 @@
   border-radius: 50%;
   cursor: pointer;
   transition: all var(--transition-fast);
+  border: 2px solid #ffffff;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 }
 
 .setting-group input[type="range"]::-webkit-slider-thumb:hover {
   transform: scale(1.1);
-  box-shadow: 0 0 0 4px rgba(0, 122, 204, 0.2);
+  box-shadow: 0 0 0 4px rgba(0, 122, 204, 0.2), 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+/* Firefox 滑块样式 */
+.setting-group input[type="range"]::-moz-range-thumb {
+  width: 18px;
+  height: 18px;
+  background: var(--accent-color);
+  border-radius: 50%;
+  cursor: pointer;
+  border: 2px solid #ffffff;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.setting-group input[type="range"]::-moz-range-track {
+  height: 6px;
+  background: var(--border-color);
+  border-radius: 3px;
+  border: none;
 }
 
 .range-labels {
@@ -551,6 +572,33 @@
   color: var(--text-primary);
 }
 
+/* 深色主题滑块优化 */
+[data-theme="dark"] .setting-group input[type="range"] {
+  background: #404040;
+  border: 1px solid #555555;
+}
+
+[data-theme="dark"] .setting-group input[type="range"]::-webkit-slider-thumb {
+  background: var(--accent-color);
+  border: 2px solid #2d2d2d;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.1);
+}
+
+[data-theme="dark"] .setting-group input[type="range"]::-webkit-slider-thumb:hover {
+  box-shadow: 0 0 0 4px rgba(0, 122, 204, 0.3), 0 2px 8px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.2);
+}
+
+[data-theme="dark"] .setting-group input[type="range"]::-moz-range-thumb {
+  background: var(--accent-color);
+  border: 2px solid #2d2d2d;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.1);
+}
+
+[data-theme="dark"] .setting-group input[type="range"]::-moz-range-track {
+  background: #404040;
+  border: 1px solid #555555;
+}
+
 /* 浅色主题优化 */
 [data-theme="light"] .settings-page {
   background: #ffffff;
@@ -561,6 +609,33 @@
   background: #ffffff;
   border-color: #d9d9d9;
   color: #262626;
+}
+
+/* 浅色主题滑块优化 */
+[data-theme="light"] .setting-group input[type="range"] {
+  background: #e8e8ed;
+  border: 1px solid #d2d2d7;
+}
+
+[data-theme="light"] .setting-group input[type="range"]::-webkit-slider-thumb {
+  background: var(--accent-color);
+  border: 2px solid #ffffff;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15), 0 0 0 1px rgba(0, 0, 0, 0.1);
+}
+
+[data-theme="light"] .setting-group input[type="range"]::-webkit-slider-thumb:hover {
+  box-shadow: 0 0 0 4px rgba(0, 122, 255, 0.15), 0 2px 8px rgba(0, 0, 0, 0.2), 0 0 0 1px rgba(0, 0, 0, 0.1);
+}
+
+[data-theme="light"] .setting-group input[type="range"]::-moz-range-thumb {
+  background: var(--accent-color);
+  border: 2px solid #ffffff;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15), 0 0 0 1px rgba(0, 0, 0, 0.1);
+}
+
+[data-theme="light"] .setting-group input[type="range"]::-moz-range-track {
+  background: #e8e8ed;
+  border: 1px solid #d2d2d7;
 }
 
 /* 高对比度支持 */
