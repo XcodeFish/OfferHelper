@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import './main-interface.css';
+import { TencentSpeechRecognizer } from '../services/tencent-speech-recognizer';
+import { getTencentConfig, validateTencentConfig } from '../config/tencent-config';
 
 interface MainInterfaceProps {
   user: { email: string } | null;
@@ -26,60 +28,128 @@ const MainInterface: React.FC<MainInterfaceProps> = ({ user, onLogout, onShowSet
   const [answer, setAnswer] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
   const [isInterviewStarted, setIsInterviewStarted] = useState(false);
+  const [speechRecognizer, setSpeechRecognizer] = useState<TencentSpeechRecognizer | null>(null);
+  const [recognizedText, setRecognizedText] = useState('');
+  const [isConfigValid, setIsConfigValid] = useState(false);
 
   const questionPlaceholder = '识别到的问题文本会显示在这里...';
   const answerPlaceholder = 'AI生成的回答内容会显示在这里...';
 
   // 窗口控制函数
   const handleClose = () => {
-    if ((window as any).electronAPI?.window) {
-      (window as any).electronAPI.window.close();
+    if (window.electronAPI?.window) {
+      window.electronAPI.window.close();
     }
   };
 
   const handleMinimize = () => {
-    if ((window as any).electronAPI?.window) {
-      (window as any).electronAPI.window.minimize();
+    if (window.electronAPI?.window) {
+      window.electronAPI.window.minimize();
     }
   };
 
   const handleHide = () => {
-    if ((window as any).electronAPI?.window) {
-      (window as any).electronAPI.window.hide();
+    if (window.electronAPI?.window) {
+      window.electronAPI.window.hide();
+    }
+  };
+
+  // 初始化语音识别器
+  const initializeSpeechRecognizer = async () => {
+    try {
+      const config = await getTencentConfig();
+      const isValid = validateTencentConfig(config);
+      setIsConfigValid(isValid);
+
+      if (!isValid) {
+        console.warn('腾讯云配置无效，请在环境变量中配置正确的 TENCENT_APP_ID、TENCENT_SECRET_ID 和 TENCENT_SECRET_KEY');
+        return;
+      }
+
+      const recognizer = new TencentSpeechRecognizer({
+        appId: config.appId,
+        secretId: config.secretId,
+        secretKey: config.secretKey,
+        engineModelType: '16k_zh',
+        voiceFormat: 1  // 使用数字格式
+      });
+
+      // 设置识别事件回调
+      recognizer.setCallbacks(
+        (result) => {
+          console.log('识别结果:', result);
+          if (result.result && result.result.voice_text_str) {
+            const text = result.result.voice_text_str;
+            setRecognizedText(text);
+            setQuestion(text);
+          }
+        },
+        (error) => {
+          console.error('识别错误:', error);
+          setVoiceState(prev => ({
+            ...prev,
+            isListening: false,
+            status: '识别出错'
+          }));
+          setIsInterviewStarted(false);
+        },
+        (status) => {
+          console.log('状态变化:', status);
+          setVoiceState(prev => ({
+            ...prev,
+            status: status
+          }));
+        }
+      );
+
+      setSpeechRecognizer(recognizer);
+    } catch (error) {
+      console.error('初始化语音识别器失败:', error);
+      setIsConfigValid(false);
     }
   };
 
   // 开始面试
   const startInterview = async () => {
     try {
+      if (!isConfigValid) {
+        alert('腾讯云配置无效，请检查配置文件');
+        return;
+      }
+
+      if (!speechRecognizer) {
+        alert('语音识别器未初始化');
+        return;
+      }
+
       setIsInterviewStarted(true);
       setVoiceState(prev => ({
         ...prev,
         isListening: true,
-        status: '面试进行中...'
+        status: '正在启动语音识别...'
       }));
 
-      // 调用语音服务开始录音
-      if (window.electronAPI?.voice) {
-        const result = await window.electronAPI.voice.startRecording();
-        if (result.success) {
-          console.log('语音录制已开始');
-          // 开始模拟问题识别
-          setTimeout(() => {
-            simulateQuestionRecognition();
-          }, 2000);
-        } else {
-          console.error('启动语音录制失败:', result.message);
-        }
-      }
+      // 清空之前的识别结果
+      setRecognizedText('');
+      setQuestion('');
+      setAnswer('');
+
+      // 启动腾讯语音识别
+      await speechRecognizer.start();
+      
+      console.log('语音识别已启动');
     } catch (error) {
       console.error('开始面试失败:', error);
       setIsInterviewStarted(false);
       setVoiceState(prev => ({
         ...prev,
         isListening: false,
-        status: '待机中...'
+        status: '启动失败'
       }));
+      
+      if (error instanceof Error) {
+        alert(`启动语音识别失败: ${error.message}`);
+      }
     }
   };
 
@@ -90,18 +160,25 @@ const MainInterface: React.FC<MainInterfaceProps> = ({ user, onLogout, onShowSet
       setVoiceState(prev => ({
         ...prev,
         isListening: false,
-        status: '待机中...'
+        status: '正在停止语音识别...'
       }));
 
-      // 调用语音服务停止录音
-      if (window.electronAPI?.voice) {
-        const result = await window.electronAPI.voice.stopRecording();
-        if (result.success) {
-          console.log('语音录制已停止');
-        }
+      // 停止腾讯语音识别
+      if (speechRecognizer) {
+        await speechRecognizer.stop();
+        console.log('语音识别已停止');
       }
+
+      setVoiceState(prev => ({
+        ...prev,
+        status: '待机中...'
+      }));
     } catch (error) {
       console.error('结束面试失败:', error);
+      setVoiceState(prev => ({
+        ...prev,
+        status: '停止失败'
+      }));
     }
   };
 
@@ -150,6 +227,7 @@ const MainInterface: React.FC<MainInterfaceProps> = ({ user, onLogout, onShowSet
   const clearContent = () => {
     setQuestion('');
     setAnswer('');
+    setRecognizedText('');
   };
 
   // 生成模拟回答
@@ -202,33 +280,6 @@ const MainInterface: React.FC<MainInterfaceProps> = ({ user, onLogout, onShowSet
     }, 1500);
   };
 
-  // 模拟问题识别
-  const simulateQuestionRecognition = () => {
-    const mockQuestions = [
-      '请介绍一下你自己',
-      '你为什么想要这份工作？',
-      '你的优势和劣势是什么？',
-      '你对我们公司了解多少？',
-      '你的职业规划是什么？'
-    ];
-
-    const randomQuestion = mockQuestions[Math.floor(Math.random() * mockQuestions.length)];
-    
-    setQuestion('');
-    let i = 0;
-    const typeInterval = setInterval(() => {
-      setQuestion(prev => prev + randomQuestion[i]);
-      i++;
-      
-      if (i >= randomQuestion.length) {
-        clearInterval(typeInterval);
-        setTimeout(() => {
-          generateMockAnswer(randomQuestion, currentMode);
-        }, 500);
-      }
-    }, 100);
-  };
-
   // 快捷键处理
   useEffect(() => {
     const handleKeydown = (e: KeyboardEvent) => {
@@ -264,10 +315,35 @@ const MainInterface: React.FC<MainInterfaceProps> = ({ user, onLogout, onShowSet
     return () => document.removeEventListener('keydown', handleKeydown);
   }, []);
 
-  // 初始化模拟 - 移除自动开始，等待用户点击开始面试按钮
+  // 初始化语音识别器
   useEffect(() => {
-    // 不再自动开始面试，等待用户手动点击
+    initializeSpeechRecognizer();
+    
+    // 组件卸载时清理资源
+    return () => {
+      if (speechRecognizer) {
+        speechRecognizer.destroy();
+      }
+    };
   }, []);
+
+  // 当语音识别器状态改变时更新音量可视化
+  useEffect(() => {
+    if (isInterviewStarted && speechRecognizer) {
+      const interval = setInterval(() => {
+        const status = speechRecognizer.getStatus();
+        if (status.isRecording) {
+          // 模拟音量变化
+          setVoiceState(prev => ({
+            ...prev,
+            volume: Array.from({ length: 5 }, () => Math.random() * 100)
+          }));
+        }
+      }, 100);
+
+      return () => clearInterval(interval);
+    }
+  }, [isInterviewStarted, speechRecognizer]);
 
   return (
     <div className="main-container">
@@ -292,6 +368,11 @@ const MainInterface: React.FC<MainInterfaceProps> = ({ user, onLogout, onShowSet
             <span className="mic-icon">🎤</span>
             <span>{voiceState.status}</span>
             <div className={`recording-indicator ${voiceState.isListening ? 'active' : ''}`}></div>
+            {!isConfigValid && (
+              <span style={{ color: '#ff6b6b', fontSize: '12px', marginLeft: '8px' }}>
+                (配置无效)
+              </span>
+            )}
           </div>
           
           <div className="volume-visualizer">
@@ -309,16 +390,21 @@ const MainInterface: React.FC<MainInterfaceProps> = ({ user, onLogout, onShowSet
           <button 
             className={`interview-btn ${isInterviewStarted ? 'stop' : 'start'}`}
             onClick={toggleListening}
+            disabled={!isConfigValid}
+            style={{ 
+              opacity: isConfigValid ? 1 : 0.5,
+              cursor: isConfigValid ? 'pointer' : 'not-allowed'
+            }}
           >
             {isInterviewStarted ? '结束面试' : '开始面试'}
           </button>
         </div>
       </div>
 
-      {/* 问题区域 */}
+      {/* 问题区域 - 标记1：显示语音识别结果 */}
       <div className="question-area">
-        <div className="question-text">
-          {question || <span className="question-placeholder">{questionPlaceholder}</span>}
+        <div className="question-text" style={{ maxHeight: '120px', overflowY: 'auto' }}>
+          {question || recognizedText || <span className="question-placeholder">{questionPlaceholder}</span>}
         </div>
       </div>
 

@@ -1,5 +1,13 @@
-import { app, BrowserWindow } from 'electron';
+// 首先加载环境变量
+import * as dotenv from 'dotenv';
 import * as path from 'path';
+
+// 根据环境加载对应的 .env 文件
+const envFile =
+  process.env.NODE_ENV === 'production' ? '.env' : '.env.development';
+dotenv.config({ path: path.resolve(process.cwd(), envFile) });
+
+import { app, BrowserWindow } from 'electron';
 import { isDev } from './utils/env';
 import { createMainWindow } from './window/main-window';
 import { setupIpcHandlers } from './ipc/setup';
@@ -25,13 +33,13 @@ if (!gotTheLock) {
   app.whenReady().then(async () => {
     // 初始化服务
     await initializeServices();
-    
+
     // 设置IPC处理器
     setupIpcHandlers();
-    
+
     // 创建主窗口
     mainWindow = createMainWindow();
-    
+
     // macOS 特殊处理
     app.on('activate', () => {
       if (BrowserWindow.getAllWindows().length === 0) {

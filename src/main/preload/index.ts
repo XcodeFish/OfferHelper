@@ -70,6 +70,21 @@ interface ElectronAPI {
     validateToken: (token: string) => Promise<boolean>;
   };
 
+  // 腾讯云配置相关
+  tencent: {
+    getConfig: () => Promise<{
+      appId: string;
+      secretId: string;
+      secretKey: string;
+      region?: string;
+    }>;
+    getConfigStatus: () => Promise<{
+      isValid: boolean;
+      missingFields: string[];
+      message: string;
+    }>;
+  };
+
   // 主题相关
   theme: {
     set: (
@@ -145,6 +160,11 @@ const electronAPI: ElectronAPI = {
     refreshToken: () => ipcRenderer.invoke('auth:refresh-token'),
     validateToken: (token: string) =>
       ipcRenderer.invoke('auth:validate-token', token),
+  },
+
+  tencent: {
+    getConfig: () => ipcRenderer.invoke('tencent:get-config'),
+    getConfigStatus: () => ipcRenderer.invoke('tencent:get-config-status'),
   },
 };
 

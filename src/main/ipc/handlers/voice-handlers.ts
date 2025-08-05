@@ -1,5 +1,6 @@
 import { IpcMainInvokeEvent } from 'electron';
 import { VoiceService } from '../../services/voice-service';
+import { TencentConfigService } from '../../services/tencent-config-service';
 
 const voiceService = new VoiceService();
 
@@ -36,6 +37,25 @@ export const voiceHandlers = {
       return await voiceService.transcribeAudio(audioData);
     } catch (error) {
       console.error('语音转文字失败:', error);
+      throw error;
+    }
+  },
+
+  // 腾讯云配置相关处理器
+  'tencent:get-config': async (event: IpcMainInvokeEvent) => {
+    try {
+      return TencentConfigService.getTencentConfig();
+    } catch (error) {
+      console.error('获取腾讯云配置失败:', error);
+      throw error;
+    }
+  },
+
+  'tencent:get-config-status': async (event: IpcMainInvokeEvent) => {
+    try {
+      return TencentConfigService.getConfigStatus();
+    } catch (error) {
+      console.error('获取腾讯云配置状态失败:', error);
       throw error;
     }
   },
